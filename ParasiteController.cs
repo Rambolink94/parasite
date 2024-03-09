@@ -19,10 +19,8 @@ public partial class ParasiteController : Node3D
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
-		Node3D head = CreateSegment(GlobalPosition);
-		Node3D tail = CreateSegment(GlobalPosition - Vector3.Back);
-
-		_availableDirections = GetAvailableDirections();
+		CreateSegment(GlobalPosition);
+		CreateSegment(GlobalPosition - Vector3.Back);
 	}
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -77,22 +75,6 @@ public partial class ParasiteController : Node3D
 
 			previous = current;
 		}
-
-		_availableDirections = GetAvailableDirections();
-	}
-
-	private Vector3[] GetAvailableDirections()
-	{
-		Vector3 head = _segments[0].Transform.Origin;
-		Vector3 next = _segments[1].Transform.Origin;
-		
-		Vector3 forward = head - next;
-		forward = forward.Normalized();
-		
-		Vector3 right = forward.Cross(Vector3.Up);
-		Vector3 left = -right;
-
-		return new[] { left, forward, right };
 	}
 
 	private Node3D CreateSegment(Vector3 position)
