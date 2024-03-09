@@ -1,0 +1,51 @@
+[gd_scene load_steps=6 format=3 uid="uid://t808q7xamcvj"]
+
+[ext_resource type="Script" path="res://Tilemap.cs" id="1_o3doh"]
+[ext_resource type="Script" path="res://ParasiteController.cs" id="2_lc66x"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_8xi8l"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fwgbi"]
+emission_enabled = true
+emission = Color(0.430478, 0.666923, 0.340781, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_ltx1e"]
+material = SubResource("StandardMaterial3D_fwgbi")
+
+[node name="Main" type="Node3D"]
+
+[node name="TilemapRoot" type="Node3D" parent="."]
+script = ExtResource("1_o3doh")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="TilemapRoot"]
+mesh = SubResource("SphereMesh_8xi8l")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="TilemapRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 20)
+mesh = SubResource("SphereMesh_8xi8l")
+
+[node name="MeshInstance3D3" type="MeshInstance3D" parent="TilemapRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 20)
+mesh = SubResource("SphereMesh_8xi8l")
+
+[node name="MeshInstance3D4" type="MeshInstance3D" parent="TilemapRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 0)
+mesh = SubResource("SphereMesh_8xi8l")
+
+[node name="MainCamera" type="Camera3D" parent="."]
+transform = Transform3D(1.29434e-07, -0.987036, 0.160501, -2.10472e-08, 0.160501, 0.987036, -1, -1.31134e-07, 5.32907e-15, 13.659, 16.2074, 10)
+current = true
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.690062, 0.723751, 0, -0.723751, 0.690062, 0, 0, 8)
+
+[node name="Parasite" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 10)
+script = ExtResource("2_lc66x")
+
+[node name="TestCamera" type="Camera3D" parent="Parasite"]
+transform = Transform3D(8.57227e-08, -0.987036, 0.160501, -2.10472e-08, 0.160501, 0.987036, -1, -8.79894e-08, -7.01573e-09, 13.659, 16.2074, 10)
+
+[node name="DebugRoot" type="MeshInstance3D" parent="Parasite"]
+transform = Transform3D(0.437251, 0, 0, 0, 0.437251, 0, 0, 0, 0.437251, 0, 0, 0)
+mesh = SubResource("SphereMesh_ltx1e")

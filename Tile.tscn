@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://cfh02fxwcdmxh"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_0omi4"]
+size = Vector2(0.8, 0.8)
+orientation = 1
+
+[node name="Tile" type="MeshInstance3D"]
+mesh = SubResource("QuadMesh_0omi4")
+skeleton = NodePath("../..")
