@@ -9,12 +9,22 @@ public partial class ParasiteController : Node3D
 
 	private readonly List<Node3D> _segments = new();
 	private Vector3[] _availableDirections;
+
+	private Node3D _leftBar;
+	private Node3D _forwardBar;
+	private Node3D _rightBar;
+
+	private Vector3 _previousHeadPosition;
 	
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
-		Node3D head = CreateSegment(Transform.Origin);
-		Node3D tail = CreateSegment(Transform.Origin - Vector3.Back);
+		Node3D head = CreateSegment(GlobalPosition);
+		Node3D tail = CreateSegment(GlobalPosition - Vector3.Back);
+
+		_leftBar = GetNode<Node3D>("Left");
+		_forwardBar = GetNode<Node3D>("Forward");
+		_rightBar = GetNode<Node3D>("Right");
 
 		_availableDirections = GetAvailableDirections();
 	}
@@ -32,19 +42,19 @@ public partial class ParasiteController : Node3D
 
 		if (input.Length() > 0)
 		{
+			_previousHeadPosition = _segments[0].GlobalPosition;
 			Transform = Transform.Translated(input);
-			UpdateSegments();
+			UpdateSegments(input);
 		}
 	}
 
-	private void UpdateSegments()
+	private void UpdateSegments(Vector3 offset)
 	{
 		var previous = _segments[0];
-		MoveSegment(previous, Transform.Origin);
 		for (int i = 1; i < _segments.Count; i++)
 		{
 			var current = _segments[i];
-			MoveSegment(current, previous.Transform.Origin);
+			MoveSegment(current, previous.GlobalPosition - offset);
 
 			previous = current;
 		}
@@ -57,11 +67,15 @@ public partial class ParasiteController : Node3D
 		Vector3 head = _segments[0].Transform.Origin;
 		Vector3 next = _segments[1].Transform.Origin;
 		
-		Vector3 forward = next - head;
+		Vector3 forward = head - next;
 		forward = forward.Normalized();
 		
 		Vector3 right = forward.Cross(Vector3.Up);
 		Vector3 left = -right;
+
+		_leftBar.GlobalPosition = Transform.Origin + left;
+		_forwardBar.GlobalPosition = Transform.Origin + forward;
+		_rightBar.GlobalPosition = Transform.Origin + right;
 
 		return new[] { left, forward, right };
 	}
