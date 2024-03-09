@@ -7,24 +7,20 @@ public partial class ParasiteController : Node3D
 {
 	private PackedScene _segmentResource = GD.Load<PackedScene>("res://ParasiteSegment.tscn");
 
-	private readonly List<Node3D> _segments = new();
+	private Tilemap _tilemap;
+
+	private readonly List<ParasiteSegment> _segments = new();
 	private Vector3[] _availableDirections;
 
-	private Node3D _leftBar;
-	private Node3D _forwardBar;
-	private Node3D _rightBar;
-
 	private Vector3 _previousHeadPosition;
+
+	public List<ParasiteSegment> Segments => _segments;
 	
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
 		Node3D head = CreateSegment(GlobalPosition);
 		Node3D tail = CreateSegment(GlobalPosition - Vector3.Back);
-
-		_leftBar = GetNode<Node3D>("Left");
-		_forwardBar = GetNode<Node3D>("Forward");
-		_rightBar = GetNode<Node3D>("Right");
 
 		_availableDirections = GetAvailableDirections();
 	}
@@ -34,18 +30,41 @@ public partial class ParasiteController : Node3D
 	{
 		Vector3 input = Vector3.Zero;
 		if (Input.IsActionJustPressed("parasite_left"))
-			input = _availableDirections[0];
+			input = Vector3.Left;
 		if (Input.IsActionJustPressed("parasite_forward"))
-			input = _availableDirections[1];
+			input = Vector3.Forward;
 		if (Input.IsActionJustPressed("parasite_right"))
-			input = _availableDirections[2];
+			input = Vector3.Right;
+		if (Input.IsActionJustPressed("parasite_back"))
+			input = Vector3.Back;
 
 		if (input.Length() > 0)
 		{
 			_previousHeadPosition = _segments[0].GlobalPosition;
-			Transform = Transform.Translated(input);
-			UpdateSegments(input);
+
+			Vector3 position = GlobalPosition + input;
+			var data = _tilemap.GetTileData(position);
+
+			if (data.Occupant is BloodCell || !data.IsOccupied)
+			{
+				GlobalPosition = position;
+				
+				// TODO: Two checks is dumb. Fix this.
+				if (data.Occupant is BloodCell bloodCell)
+				{
+					CreateSegment(position);
+					
+					bloodCell.QueueFree();
+				}
+
+				UpdateSegments(input);
+			}
 		}
+	}
+
+	public void SetTilemap(Tilemap tilemap)
+	{
+		_tilemap = tilemap;
 	}
 
 	private void UpdateSegments(Vector3 offset)
@@ -73,16 +92,12 @@ public partial class ParasiteController : Node3D
 		Vector3 right = forward.Cross(Vector3.Up);
 		Vector3 left = -right;
 
-		_leftBar.GlobalPosition = Transform.Origin + left;
-		_forwardBar.GlobalPosition = Transform.Origin + forward;
-		_rightBar.GlobalPosition = Transform.Origin + right;
-
 		return new[] { left, forward, right };
 	}
 
 	private Node3D CreateSegment(Vector3 position)
 	{
-		var segment = _segmentResource.Instantiate<Node3D>();
+		var segment = _segmentResource.Instantiate<ParasiteSegment>();
 		AddChild(segment);
 		
 		MoveSegment(segment, position);

@@ -1,4 +1,6 @@
-[gd_scene load_steps=5 format=3 uid="uid://c4q0puymdav0e"]
+[gd_scene load_steps=6 format=3 uid="uid://c4q0puymdav0e"]
+
+[ext_resource type="Script" path="res://ParasiteSegment.cs" id="1_varej"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_bt8nd"]
 
@@ -19,3 +21,4 @@ material = SubResource("StandardMaterial3D_q68wr")
 
 [node name="ParasiteSegment" type="MeshInstance3D"]
 mesh = SubResource("SphereMesh_vyog0")
+script = ExtResource("1_varej")

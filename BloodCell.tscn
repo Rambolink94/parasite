@@ -1,0 +1,23 @@
+[gd_scene load_steps=6 format=3 uid="uid://bxd44vgfmnfoo"]
+
+[ext_resource type="Script" path="res://BloodCell.cs" id="1_evr17"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_jx6k4"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_ud1dh"]
+as_normal_map = true
+bump_strength = 32.0
+noise = SubResource("FastNoiseLite_jx6k4")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hl201"]
+albedo_color = Color(0.764706, 0.0156863, 0.0352941, 1)
+emission = Color(0.956863, 0.247059, 0.231373, 1)
+normal_texture = SubResource("NoiseTexture2D_ud1dh")
+rim_enabled = true
+
+[sub_resource type="SphereMesh" id="SphereMesh_42c50"]
+material = SubResource("StandardMaterial3D_hl201")
+
+[node name="BloodCell" type="MeshInstance3D"]
+mesh = SubResource("SphereMesh_42c50")
+script = ExtResource("1_evr17")
