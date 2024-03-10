@@ -20,3 +20,4 @@ material = SubResource("StandardMaterial3D_hl201")
 [node name="BloodCell" type="MeshInstance3D"]
 mesh = SubResource("SphereMesh_42c50")
 script = ExtResource("1_8etdl")
+WanderChance = 0.3

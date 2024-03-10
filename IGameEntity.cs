@@ -7,7 +7,7 @@ public interface IGameEntity
 {
     public event TurnCompletedEventHandler TurnEnded;
     
-    [Export] public EntityType EntityType { get; }
+    public EntityType EntityType { get; }
 
     public void BeginTurn();
     public void EndTurn();

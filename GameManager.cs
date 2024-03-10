@@ -13,6 +13,7 @@ public partial class GameManager : Node3D
 	private Tilemap _tilemap;
 	private BloodCellSpawner _bloodCellSpawner;
 	private Label _turnLabel;
+	private Label _turnCountLabel;
 	private string _turnLabelFormatter;
 
 	private IGameEntity _currentEntityTurn;
@@ -25,6 +26,8 @@ public partial class GameManager : Node3D
 		_tilemap = GetNode<Tilemap>("../TilemapRoot");
 		_bloodCellSpawner = GetNode<BloodCellSpawner>("BloodCellSpawner");
 		_turnLabel = GetNode<Label>("../TurnLabel");
+		_turnCountLabel = GetNode<Label>("../TurnCountLabel");
+		
 		_turnLabelFormatter = _turnLabel.Text;
 		
 		_tilemap.Generate();
@@ -38,8 +41,8 @@ public partial class GameManager : Node3D
 		BeginEntityTurn();
 		
 		// TODO: Experiment with these numbers to make sure parts aren't spawned out of bounds
-		var randX = GD.Randi() % _tilemap.MapSize - 1;
-		var randZ = GD.Randi() % _tilemap.MapSize - 1;
+		var randX = 1 + GD.Randi() % _tilemap.MapSize - 1;
+		var randZ = 1 + GD.Randi() % _tilemap.MapSize - 1;
 		
 		player.GlobalPosition = new Vector3(randX, 0f, randZ * -1);
 		AddChild(player);
@@ -70,7 +73,7 @@ public partial class GameManager : Node3D
 			throw new InvalidOperationException("A turn was ended for an entity who turn it was not.");
 		}
 
-		if (_turnCount % WhiteBloodCellSpawnRate == 0)
+		if (entity.EntityType == EntityType.Player && _turnCount % WhiteBloodCellSpawnRate == 0)
 		{
 			BloodCell bloodCell = _bloodCellSpawner.SpawnWhiteBloodCell(OnTurnCompleted);
 			
@@ -87,10 +90,6 @@ public partial class GameManager : Node3D
 			{
 				validEntity = true;
 			}
-			else
-			{
-				GD.Print("Entity Deleted");
-			}
 		}
 		
 		BeginEntityTurn();
@@ -98,7 +97,11 @@ public partial class GameManager : Node3D
 
 	private void BeginEntityTurn()
 	{
-		_turnCount++;
+		if (_currentEntityTurn.EntityType == EntityType.Player)
+		{
+			_turnCount++;
+			_turnCountLabel.Text = _turnCount.ToString();
+		}
 		
 		_turnLabel.Text = string.Format(_turnLabelFormatter, _currentEntityTurn.EntityType);
 		_currentEntityTurn.BeginTurn();
