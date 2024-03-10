@@ -40,9 +40,8 @@ public partial class GameManager : Node3D
 		_currentEntityTurn = player;
 		BeginEntityTurn();
 		
-		// TODO: Experiment with these numbers to make sure parts aren't spawned out of bounds
-		var randX = 1 + GD.Randi() % _tilemap.MapSize - 1;
-		var randZ = 1 + GD.Randi() % _tilemap.MapSize - 1;
+		var randX = GD.RandRange(2, _tilemap.MapSize - 2);
+		var randZ = GD.RandRange(2, _tilemap.MapSize - 2);
 		
 		player.GlobalPosition = new Vector3(randX, 0f, randZ * -1);
 		AddChild(player);
@@ -73,7 +72,7 @@ public partial class GameManager : Node3D
 			throw new InvalidOperationException("A turn was ended for an entity who turn it was not.");
 		}
 
-		if (entity.EntityType == EntityType.Player && _turnCount % WhiteBloodCellSpawnRate == 0)
+		if (entity.EntityType.HasFlag(EntityType.Player) && _turnCount % WhiteBloodCellSpawnRate == 0)
 		{
 			BloodCell bloodCell = _bloodCellSpawner.SpawnWhiteBloodCell(OnTurnCompleted);
 			
@@ -97,13 +96,13 @@ public partial class GameManager : Node3D
 
 	private void BeginEntityTurn()
 	{
-		if (_currentEntityTurn.EntityType == EntityType.Player)
+		if (_currentEntityTurn.EntityType.HasFlag(EntityType.Player))
 		{
 			_turnCount++;
 			_turnCountLabel.Text = _turnCount.ToString();
 		}
 		
 		_turnLabel.Text = string.Format(_turnLabelFormatter, _currentEntityTurn.EntityType);
-		_currentEntityTurn.BeginTurn();
+		_currentEntityTurn.BeginTurn(Roshambo.Role());
 	}
 }

@@ -1,6 +1,7 @@
-[gd_scene load_steps=6 format=3 uid="uid://ciglbtkqktaxb"]
+[gd_scene load_steps=7 format=3 uid="uid://ciglbtkqktaxb"]
 
 [ext_resource type="Script" path="res://BloodCell.cs" id="1_8etdl"]
+[ext_resource type="PackedScene" uid="uid://2i32dt265ayw" path="res://Roshambo.tscn" id="2_ijnom"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_jx6k4"]
 
@@ -21,3 +22,5 @@ material = SubResource("StandardMaterial3D_hl201")
 mesh = SubResource("SphereMesh_42c50")
 script = ExtResource("1_8etdl")
 WanderChance = 0.3
+
+[node name="Roshambo" parent="." instance=ExtResource("2_ijnom")]

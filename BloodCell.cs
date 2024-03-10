@@ -10,6 +10,7 @@ public partial class BloodCell : Node3D, ITileOccupier, IGameEntity
 	[Export] public int MinWanderTurns { get; set; } = 1;
 	
 	private BloodCellSpawner _spawner;
+	private RoshamboController _roshamboController;
 	private bool _turnActive;
 	private readonly Vector3[] _possibleDirections = { Vector3.Left, Vector3.Forward, Vector3.Right, Vector3.Back };
 
@@ -19,7 +20,20 @@ public partial class BloodCell : Node3D, ITileOccupier, IGameEntity
 	
 	public event TurnCompletedEventHandler TurnEnded;
 
-	public EntityType EntityType => EntityType.BloodCell;
+	public RoshamboController RoshamboController
+	{
+		get
+		{
+			if (_roshamboController == null)
+			{
+				_roshamboController = GetNode<RoshamboController>("Roshambo");
+			}
+
+			return _roshamboController;
+		}
+	}
+	public Roshambo.Option CurrentRoshambo { get; set; }
+	public EntityType EntityType => IsWhiteBloodCell ? EntityType.WhiteBloodCell : EntityType.RedBloodCell;
 	
 	public bool IsWhiteBloodCell { get; private set; }
 	
@@ -34,9 +48,10 @@ public partial class BloodCell : Node3D, ITileOccupier, IGameEntity
 		_spawner.Destroy(this, triggerRespawn);
 	}
 	
-	public void BeginTurn()
+	public void BeginTurn(Roshambo.Option option)
 	{
 		_turnActive = true;
+		SetRoshambo(option);
 
 		var chance = GD.Randf();
 		if (!_isWandering && chance <= WanderChance)
@@ -51,14 +66,19 @@ public partial class BloodCell : Node3D, ITileOccupier, IGameEntity
 			_wanderTurn++;
 			
 			var availableDirections = _possibleDirections.ToList();
-			for (var i = (int)(GD.Randi() % (availableDirections.Count - 1)); i >= 0;)
+			for (var i = (int)(GD.Randi() % (availableDirections.Count - 1)); i >= 0 && availableDirections.Count > 0;)
 			{
 				Vector3 vec = availableDirections[i];
 				Tilemap.TileData data = _spawner.Tilemap.GetTileData(GlobalPosition + vec);
-				if (data == null || data.IsOccupied)
+				if (data == null || !data.IsEnterable(EntityType.Player | EntityType.Parasite, CurrentRoshambo))
 				{
 					availableDirections.RemoveAt(i);
-					i = (int)(GD.Randi() % (availableDirections.Count - 1));
+					i = 0;
+					if (availableDirections.Count > 1)
+					{
+						i = (int)(GD.Randi() % (availableDirections.Count - 1));
+					}
+					
 					continue;
 				}
 				
@@ -90,7 +110,7 @@ public partial class BloodCell : Node3D, ITileOccupier, IGameEntity
 		foreach (Vector3 vec in _possibleDirections)
 		{
 			Tilemap.TileData data = _spawner.Tilemap.GetTileData(GlobalPosition + vec);
-			if (data == null || data.IsOccupied)
+			if (data == null || !data.IsEnterable(EntityType.Player | EntityType.Parasite, CurrentRoshambo))
 			{
 				continue;
 			}
@@ -118,5 +138,11 @@ public partial class BloodCell : Node3D, ITileOccupier, IGameEntity
 		_spawner.Tilemap.UpdateTileState(GlobalPosition, null);
 		Transform = Transform.Translated(direction);
 		_spawner.Tilemap.UpdateTileState(GlobalPosition, this);
+	}
+	
+	public void SetRoshambo(Roshambo.Option option)
+	{
+		CurrentRoshambo = option;
+		RoshamboController.SetRoshambo(option);
 	}
 }

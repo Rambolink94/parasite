@@ -5,16 +5,31 @@ namespace Parasite;
 
 public partial class ParasiteController : Node3D, IGameEntity
 {
-	public EntityType EntityType => EntityType.Player;
 	
 	private PackedScene _segmentResource = GD.Load<PackedScene>("res://ParasiteSegment.tscn");
 
 	private Tilemap _tilemap;
-	private readonly List<ParasiteSegment> _segments = new();
 	private bool _turnActive;
-
-	public List<ParasiteSegment> Segments => _segments;
+	private Roshambo.Option _currentRoshamboOption;
 	
+	public EntityType EntityType => EntityType.Player | EntityType.Parasite;
+
+	public Roshambo.Option CurrentRoshambo
+	{
+		get => _currentRoshamboOption;
+		set
+		{
+			_currentRoshamboOption = value;
+			
+			foreach (ParasiteSegment segment in Segments)
+			{
+				segment.SetRoshambo(value);
+			}
+		}
+	}
+
+	public List<ParasiteSegment> Segments { get; } = new();
+
 	public event TurnCompletedEventHandler TurnEnded;
 	
 	// Called when the node enters the scene tree for the first time.
@@ -46,14 +61,18 @@ public partial class ParasiteController : Node3D, IGameEntity
 
 		if (input.Length() > 0)
 		{
-			Vector3 position = _segments[0].GlobalPosition + input;
+			Vector3 position = Segments[0].GlobalPosition + input;
 			Tilemap.TileData data = _tilemap.GetTileData(position);
 
-			if (data != null && (data.Occupant is BloodCell || !data.IsOccupied))
+			if (data != null && data.IsEnterable(EntityType.BloodCell, CurrentRoshambo))
 			{
-				// TODO: Two checks is dumb. Fix this.
 				if (data.Occupant is BloodCell bloodCell)
 				{
+					if (!Roshambo.Test(CurrentRoshambo, bloodCell.CurrentRoshambo))
+					{
+						return;
+					}
+					
 					CreateSegment(position, true);
 					
 					bloodCell.Destroy(!bloodCell.IsWhiteBloodCell);
@@ -72,17 +91,17 @@ public partial class ParasiteController : Node3D, IGameEntity
 
 	private void UpdateSegments(Vector3 offset)
 	{
-		Vector3 previousPosition = _segments[0].GlobalPosition;
-		for (int i = 1; i < _segments.Count; i++)
+		Vector3 previousPosition = Segments[0].GlobalPosition;
+		for (int i = 1; i < Segments.Count; i++)
 		{
-			ParasiteSegment current = _segments[i];
+			ParasiteSegment current = Segments[i];
 			Vector3 toSet = previousPosition;
 			previousPosition = current.GlobalPosition;
 			
 			MoveSegment(current, toSet);
 		}
 		
-		MoveSegment(_segments[0], _segments[0].GlobalPosition + offset, true);
+		MoveSegment(Segments[0], Segments[0].GlobalPosition + offset, true);
 	}
 
 	private ParasiteSegment CreateSegment(Vector3 position, bool deferMove = false)
@@ -95,7 +114,7 @@ public partial class ParasiteController : Node3D, IGameEntity
 			MoveSegment(segment, position);
 		}
 		
-		_segments.Add(segment);
+		Segments.Add(segment);
 
 		return segment;
 	}
@@ -111,9 +130,10 @@ public partial class ParasiteController : Node3D, IGameEntity
 		_tilemap.UpdateTileState(position, segment);
 	}
 	
-	public void BeginTurn()
+	public void BeginTurn(Roshambo.Option option)
 	{
 		_turnActive = true;
+		CurrentRoshambo = option;
 	}
 
 	public void EndTurn()

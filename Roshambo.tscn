@@ -1,0 +1,57 @@
+[gd_scene load_steps=11 format=3 uid="uid://2i32dt265ayw"]
+
+[ext_resource type="Script" path="res://RoshamboController.cs" id="1_l4cq2"]
+[ext_resource type="Texture2D" uid="uid://cln7hh4i0224" path="res://Artwork/Temp/Rock.png" id="1_lm110"]
+[ext_resource type="Texture2D" uid="uid://nnbt3h0s8apx" path="res://Artwork/Temp/Paper.png" id="2_fn7le"]
+[ext_resource type="Texture2D" uid="uid://cb8cxcom2qis8" path="res://Artwork/Temp/Scissors.png" id="3_ss2cj"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_apisl"]
+transparency = 1
+albedo_color = Color(0.870588, 0.423529, 0, 1)
+albedo_texture = ExtResource("1_lm110")
+emission_enabled = true
+emission = Color(0.901798, 0.337024, 0, 1)
+
+[sub_resource type="QuadMesh" id="QuadMesh_pmmy3"]
+material = SubResource("StandardMaterial3D_apisl")
+orientation = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ps72k"]
+transparency = 1
+albedo_color = Color(0.870588, 0.423529, 0, 1)
+albedo_texture = ExtResource("2_fn7le")
+emission_enabled = true
+emission = Color(0.901798, 0.337024, 0, 1)
+
+[sub_resource type="QuadMesh" id="QuadMesh_rfert"]
+material = SubResource("StandardMaterial3D_ps72k")
+orientation = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_akdbi"]
+transparency = 1
+albedo_color = Color(0.870588, 0.423529, 0, 1)
+albedo_texture = ExtResource("3_ss2cj")
+emission_enabled = true
+emission = Color(0.901961, 0.337255, 0, 1)
+
+[sub_resource type="QuadMesh" id="QuadMesh_nh746"]
+material = SubResource("StandardMaterial3D_akdbi")
+orientation = 1
+
+[node name="Roshambo" type="Node3D"]
+script = ExtResource("1_l4cq2")
+
+[node name="Rock" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.545239, 0)
+mesh = SubResource("QuadMesh_pmmy3")
+skeleton = NodePath("../..")
+
+[node name="Paper" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.545239, 0)
+mesh = SubResource("QuadMesh_rfert")
+skeleton = NodePath("../..")
+
+[node name="Scissors" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.545239, 0)
+mesh = SubResource("QuadMesh_nh746")
+skeleton = NodePath("../..")

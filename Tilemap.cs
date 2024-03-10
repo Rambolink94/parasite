@@ -21,9 +21,12 @@ public partial class Tilemap : Node3D
 			for (int z = 0; z < MapSize; z++)
 			{
 				var tile = _initialTile.Instantiate<MeshInstance3D>();
+				var label = tile.GetNode<Label3D>("CoordLabel");
 				
 				Transform3D transform = Transform;
 				transform.Origin = new Vector3(x, 0f, z * -1);
+				label.Text = $"({x}, {z * -1})";
+				
 				tile.Transform = transform;
 
 				var tileData = new TileData(transform.Origin, tile);
@@ -48,8 +51,7 @@ public partial class Tilemap : Node3D
 		{
 			var x = globalPosition.X;
 			var z = globalPosition.Z;
-
-			GD.Print("X: ", x, " Z: ", z);
+			
 			if (x < 0 || x >= MapSize || z > 0 || z <= -MapSize)
 			{
 				return null;
@@ -65,15 +67,10 @@ public partial class Tilemap : Node3D
 
 	public Vector3 GetOpenTile()
 	{
-		var openCells = _tileData.Where(x => !x.IsOccupied).ToList();
+		var openCells = _tileData.Where(x => x.IsEnterable(EntityType.None)).ToList();
 		var index = GD.Randi() % openCells.Count;	// TODO: If no open cells, end game.
 
 		return openCells[(int)index].GlobalPosition;
-	}
-
-	// Called every frame. 'delta' is the elapsed time since the previous frame.
-	public override void _Process(double delta)
-	{
 	}
 
 	public class TileData
@@ -85,11 +82,20 @@ public partial class Tilemap : Node3D
 		}
 		
 		public Vector3 GlobalPosition { get; set; }
-
-		public bool IsOccupied => Occupant != null;
 		
 		public ITileOccupier Occupant { get; set; }
 		
 		public MeshInstance3D TileMesh { get; }
+		
+		public bool IsEnterable(EntityType allowedTypes, Roshambo.Option option = Roshambo.Option.None)
+		{
+			if (Occupant == null || 
+			    (allowedTypes.HasFlag(Occupant.EntityType) && Roshambo.Test(option, Occupant.CurrentRoshambo)))
+			{
+				return true;
+			}
+
+			return false;
+		}
 	}
 }
