@@ -9,21 +9,12 @@ public partial class Tilemap : Node3D
 	[Export] public int MapSize { get; set; } = 20;
 	
 	private PackedScene _initialTile = GD.Load<PackedScene>("res://Tile.tscn");
-	private PackedScene _parasiteResource = GD.Load<PackedScene>("res://Parasite.tscn");
 	
 	private TileData[] _tileData;
-
-	private BloodCellSpawner _bloodCellSpawner;
 	
 	// Called when the node enters the scene tree for the first time.
-	public override void _Ready()
+	public void Generate()
 	{
-		_bloodCellSpawner = GetNode<BloodCellSpawner>("BloodCellSpawner");
-		
-		// TODO: Experiment with these numbers to make sure parts aren't spawned out of bounds
-		var randX = GD.Randi() % MapSize - 1;
-		var randZ = GD.Randi() % MapSize - 1;
-		
 		_tileData = new TileData[MapSize * MapSize];
 		for (int x = 0; x < MapSize; x++)
 		{
@@ -41,21 +32,6 @@ public partial class Tilemap : Node3D
 				AddChild(tile);
 			}
 		}
-
-		// Handle player
-		var player = _parasiteResource.Instantiate<ParasiteController>();
-		player.SetTilemap(this);
-		
-		player.GlobalPosition = new Vector3(randX, 0f, randZ * -1);
-		AddChild(player);
-		
-		var segments = player.Segments;
-		UpdateTileState(segments[0].GlobalPosition, segments[0]);
-		UpdateTileState(segments[1].GlobalPosition, segments[1]);
-		
-		// Handle red blood cell
-		_bloodCellSpawner.SetTilemap(this);
-		_bloodCellSpawner.SpawnRedBloodCell();
 	}
 
 	public void UpdateTileState(Vector3 globalPosition, ITileOccupier occupant)

@@ -3,7 +3,7 @@ using Godot;
 
 namespace Parasite;
 
-public partial class ParasiteController : Node3D
+public partial class ParasiteController : Node3D, IGameEntity
 {
 	private PackedScene _segmentResource = GD.Load<PackedScene>("res://ParasiteSegment.tscn");
 
