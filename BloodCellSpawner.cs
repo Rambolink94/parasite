@@ -1,45 +1,80 @@
+using System;
+using System.Collections.Generic;
 using Godot;
 
 namespace Parasite;
 
 public partial class BloodCellSpawner : Node3D
 {
-	private PackedScene _bloodCellResource = GD.Load<PackedScene>("res://BloodCell.tscn");
-	private Tilemap _tilemap;
+	private PackedScene _redBloodCellResource = GD.Load<PackedScene>("res://RedBloodCell.tscn");
+	private PackedScene _whiteBloodCellResource = GD.Load<PackedScene>("res://WhiteBloodCell.tscn");
+
+	private Dictionary<BloodCell, TurnCompletedEventHandler> _handlers = new();
 	
-	// Called when the node enters the scene tree for the first time.
-	public override void _Ready()
-	{
-		
-	}
+	public ParasiteController Player { get; private set; }
+	
+	public Tilemap Tilemap { get; private set; }
 
-	// Called every frame. 'delta' is the elapsed time since the previous frame.
-	public override void _Process(double delta)
+	public void Initialize(Tilemap tilemap, ParasiteController player)
 	{
-	}
-
-	public void SetTilemap(Tilemap tilemap)
-	{
-		_tilemap = tilemap;
+		Tilemap = tilemap;
+		Player = player;
 	}
 	
 	public void SpawnRedBloodCell()
 	{
-		Vector3 position = _tilemap.GetOpenTile();
+		try
+		{
+			var bloodCell = _redBloodCellResource.Instantiate<BloodCell>();
+			SetupBloodCell(bloodCell, false);
+		}
+		catch (Exception e)
+		{
+			GD.Print(e);
+		}
+	}
 
-		var bloodCell = _bloodCellResource.Instantiate<BloodCell>();
-		bloodCell.SetSpawner(this);
+	public BloodCell SpawnWhiteBloodCell(TurnCompletedEventHandler handler)
+	{
+		var bloodCell = _whiteBloodCellResource.Instantiate<BloodCell>();
+		_handlers.Add(bloodCell, handler);
+		bloodCell.TurnEnded += handler;
+		
+		SetupBloodCell(bloodCell, true);
+
+		return bloodCell;
+	}
+
+	public void Destroy(BloodCell bloodCell, bool triggerRespawn = false)
+	{
+		if (bloodCell.IsWhiteBloodCell)
+		{
+			if (!_handlers.TryGetValue(bloodCell, out TurnCompletedEventHandler handler))
+			{
+				throw new InvalidOperationException($"Failed to unsubscribe event handler for '{bloodCell.Name}'");
+			}
+			
+			_handlers.Remove(bloodCell);
+			bloodCell.TurnEnded -= handler;	
+		}
+		
+		Tilemap.UpdateTileState(bloodCell.GlobalPosition, null);
+		bloodCell.QueueFree();
+
+		if (triggerRespawn)
+		{
+			SpawnRedBloodCell();
+		}
+	}
+
+	private void SetupBloodCell(BloodCell bloodCell, bool isWhiteBloodCell)
+	{
+		Vector3 position = Tilemap.GetOpenTile();
+		
+		bloodCell.Initialize(this, isWhiteBloodCell);
 		AddChild(bloodCell);
 
 		bloodCell.GlobalPosition = position;
-		_tilemap.UpdateTileState(position, bloodCell);
-	}
-
-	public void Destroy(BloodCell bloodCell)
-	{
-		_tilemap.UpdateTileState(bloodCell.GlobalPosition, null);
-		bloodCell.QueueFree();
-		
-		SpawnRedBloodCell();
+		Tilemap.UpdateTileState(position, bloodCell);
 	}
 }

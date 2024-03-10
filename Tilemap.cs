@@ -66,7 +66,7 @@ public partial class Tilemap : Node3D
 	public Vector3 GetOpenTile()
 	{
 		var openCells = _tileData.Where(x => !x.IsOccupied).ToList();
-		var index = GD.Randi() % openCells.Count;
+		var index = GD.Randi() % openCells.Count;	// TODO: If no open cells, end game.
 
 		return openCells[(int)index].GlobalPosition;
 	}

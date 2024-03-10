@@ -5,14 +5,17 @@ namespace Parasite;
 
 public partial class ParasiteController : Node3D, IGameEntity
 {
+	public EntityType EntityType => EntityType.Player;
+	
 	private PackedScene _segmentResource = GD.Load<PackedScene>("res://ParasiteSegment.tscn");
 
 	private Tilemap _tilemap;
-
 	private readonly List<ParasiteSegment> _segments = new();
-	private Vector3[] _availableDirections;
+	private bool _turnActive;
 
 	public List<ParasiteSegment> Segments => _segments;
+	
+	public event TurnCompletedEventHandler TurnEnded;
 	
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
@@ -26,6 +29,11 @@ public partial class ParasiteController : Node3D, IGameEntity
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
 	public override void _Process(double delta)
 	{
+		if (!_turnActive) return;
+		
+		// TODO: Check all possible paths to make sure you can move.
+		// If not, you lose!
+		
 		Vector3 input = Vector3.Zero;
 		if (Input.IsActionJustPressed("parasite_left"))
 			input = Vector3.Left;
@@ -48,10 +56,11 @@ public partial class ParasiteController : Node3D, IGameEntity
 				{
 					CreateSegment(position, true);
 					
-					bloodCell.Destroy();
+					bloodCell.Destroy(!bloodCell.IsWhiteBloodCell);
 				}
 
 				UpdateSegments(input);
+				EndTurn();
 			}
 		}
 	}
@@ -100,5 +109,16 @@ public partial class ParasiteController : Node3D, IGameEntity
 
 		segment.GlobalPosition = position;
 		_tilemap.UpdateTileState(position, segment);
+	}
+	
+	public void BeginTurn()
+	{
+		_turnActive = true;
+	}
+
+	public void EndTurn()
+	{
+		_turnActive = false;
+		TurnEnded?.Invoke(this);
 	}
 }
