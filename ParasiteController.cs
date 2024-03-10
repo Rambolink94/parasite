@@ -12,15 +12,15 @@ public partial class ParasiteController : Node3D
 	private readonly List<ParasiteSegment> _segments = new();
 	private Vector3[] _availableDirections;
 
-	private Vector3 _previousHeadPosition;
-
 	public List<ParasiteSegment> Segments => _segments;
 	
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
-		CreateSegment(GlobalPosition);
+		ParasiteSegment head = CreateSegment(GlobalPosition);
 		CreateSegment(GlobalPosition - Vector3.Back);
+
+		head.IsHead = true;
 	}
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -38,21 +38,17 @@ public partial class ParasiteController : Node3D
 
 		if (input.Length() > 0)
 		{
-			_previousHeadPosition = _segments[0].GlobalPosition;
+			Vector3 position = _segments[0].GlobalPosition + input;
+			Tilemap.TileData data = _tilemap.GetTileData(position);
 
-			Vector3 position = GlobalPosition + input;
-			var data = _tilemap.GetTileData(position);
-
-			if (data.Occupant is BloodCell || !data.IsOccupied)
+			if (data != null && (data.Occupant is BloodCell || !data.IsOccupied))
 			{
-				GlobalPosition = position;
-				
 				// TODO: Two checks is dumb. Fix this.
 				if (data.Occupant is BloodCell bloodCell)
 				{
-					CreateSegment(position);
+					CreateSegment(position, true);
 					
-					bloodCell.QueueFree();
+					bloodCell.Destroy();
 				}
 
 				UpdateSegments(input);
@@ -67,29 +63,42 @@ public partial class ParasiteController : Node3D
 
 	private void UpdateSegments(Vector3 offset)
 	{
-		var previous = _segments[0];
+		Vector3 previousPosition = _segments[0].GlobalPosition;
 		for (int i = 1; i < _segments.Count; i++)
 		{
-			var current = _segments[i];
-			MoveSegment(current, previous.GlobalPosition - offset);
-
-			previous = current;
+			ParasiteSegment current = _segments[i];
+			Vector3 toSet = previousPosition;
+			previousPosition = current.GlobalPosition;
+			
+			MoveSegment(current, toSet);
 		}
+		
+		MoveSegment(_segments[0], _segments[0].GlobalPosition + offset, true);
 	}
 
-	private Node3D CreateSegment(Vector3 position)
+	private ParasiteSegment CreateSegment(Vector3 position, bool deferMove = false)
 	{
 		var segment = _segmentResource.Instantiate<ParasiteSegment>();
 		AddChild(segment);
+
+		if (!deferMove)
+		{
+			MoveSegment(segment, position);
+		}
 		
-		MoveSegment(segment, position);
 		_segments.Add(segment);
 
 		return segment;
 	}
 
-	private void MoveSegment(Node3D segment, Vector3 position)
+	private void MoveSegment(ParasiteSegment segment, Vector3 position, bool ignoreNullSet = false)
 	{
+		if (!ignoreNullSet)
+		{
+			_tilemap.UpdateTileState(segment.GlobalPosition, null);
+		}
+
 		segment.GlobalPosition = position;
+		_tilemap.UpdateTileState(position, segment);
 	}
 }

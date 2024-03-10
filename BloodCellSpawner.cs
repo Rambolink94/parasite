@@ -5,6 +5,7 @@ namespace Parasite;
 public partial class BloodCellSpawner : Node3D
 {
 	private PackedScene _bloodCellResource = GD.Load<PackedScene>("res://BloodCell.tscn");
+	private Tilemap _tilemap;
 	
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
@@ -17,14 +18,28 @@ public partial class BloodCellSpawner : Node3D
 	{
 	}
 
-	public void SpawnRedBloodCell(Tilemap tilemap)
+	public void SetTilemap(Tilemap tilemap)
 	{
-		Vector3 position = tilemap.GetOpenTile();
+		_tilemap = tilemap;
+	}
+	
+	public void SpawnRedBloodCell()
+	{
+		Vector3 position = _tilemap.GetOpenTile();
 
 		var bloodCell = _bloodCellResource.Instantiate<BloodCell>();
+		bloodCell.SetSpawner(this);
 		AddChild(bloodCell);
 
 		bloodCell.GlobalPosition = position;
-		tilemap.UpdateTileState(position, bloodCell);
+		_tilemap.UpdateTileState(position, bloodCell);
+	}
+
+	public void Destroy(BloodCell bloodCell)
+	{
+		_tilemap.UpdateTileState(bloodCell.GlobalPosition, null);
+		bloodCell.QueueFree();
+		
+		SpawnRedBloodCell();
 	}
 }

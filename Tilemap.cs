@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Godot;
 
@@ -19,24 +20,25 @@ public partial class Tilemap : Node3D
 	{
 		_bloodCellSpawner = GetNode<BloodCellSpawner>("BloodCellSpawner");
 		
-		var randX = GD.Randi() % MapSize;
-		var randZ = GD.Randi() % MapSize;
+		// TODO: Experiment with these numbers to make sure parts aren't spawned out of bounds
+		var randX = GD.Randi() % MapSize - 1;
+		var randZ = GD.Randi() % MapSize - 1;
 		
 		_tileData = new TileData[MapSize * MapSize];
 		for (int x = 0; x < MapSize; x++)
 		{
 			for (int z = 0; z < MapSize; z++)
 			{
-				var node = _initialTile.Instantiate<Node3D>();
-
-				var transform = Transform;
+				var tile = _initialTile.Instantiate<MeshInstance3D>();
+				
+				Transform3D transform = Transform;
 				transform.Origin = new Vector3(x, 0f, z * -1);
-				node.Transform = transform;
+				tile.Transform = transform;
 
-				var tileData = new TileData(transform.Origin);
+				var tileData = new TileData(transform.Origin, tile);
 				_tileData[x * MapSize + z] = tileData;
 				
-				AddChild(node);
+				AddChild(tile);
 			}
 		}
 
@@ -52,17 +54,37 @@ public partial class Tilemap : Node3D
 		UpdateTileState(segments[1].GlobalPosition, segments[1]);
 		
 		// Handle red blood cell
-		_bloodCellSpawner.SpawnRedBloodCell(this);
+		_bloodCellSpawner.SetTilemap(this);
+		_bloodCellSpawner.SpawnRedBloodCell();
 	}
 
 	public void UpdateTileState(Vector3 globalPosition, ITileOccupier occupant)
 	{
-		_tileData[(int)(globalPosition.X * MapSize + globalPosition.Z)].Occupant = occupant;
+		TileData tileData = GetTileData(globalPosition);
+		
+		tileData.Occupant = occupant;
+		tileData.TileMesh.GetChild<Node3D>(0).Visible = occupant != null;
 	}
 
 	public TileData GetTileData(Vector3 globalPosition)
 	{
-		return _tileData[(int)(globalPosition.X * MapSize + globalPosition.Z)];
+		try
+		{
+			var x = globalPosition.X;
+			var z = globalPosition.Z;
+
+			GD.Print("X: ", x, " Z: ", z);
+			if (x < 0 || x >= MapSize || z > 0 || z <= -MapSize)
+			{
+				return null;
+			}
+			
+			return _tileData[(int)(x * MapSize - z)];
+		}
+		catch (IndexOutOfRangeException)
+		{
+			return null;
+		}
 	}
 
 	public Vector3 GetOpenTile()
@@ -80,9 +102,10 @@ public partial class Tilemap : Node3D
 
 	public class TileData
 	{
-		public TileData(Vector3 globalPosition)
+		public TileData(Vector3 globalPosition, MeshInstance3D tileMesh)
 		{
 			GlobalPosition = globalPosition;
+			TileMesh = tileMesh;
 		}
 		
 		public Vector3 GlobalPosition { get; set; }
@@ -90,5 +113,7 @@ public partial class Tilemap : Node3D
 		public bool IsOccupied => Occupant != null;
 		
 		public ITileOccupier Occupant { get; set; }
+		
+		public MeshInstance3D TileMesh { get; }
 	}
 }
