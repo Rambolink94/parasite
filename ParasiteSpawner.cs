@@ -18,10 +18,12 @@ public class ParasiteSpawner : IEntitySpawner<ParasiteEntity>
         Tilemap tilemap = _gameManager.Tilemap;
         var parasite = _parasiteResource.Instantiate<T>();
         
+        parasite.Initialize(_gameManager.Tilemap);
+        
         var x = positionOverride.X;
         var z = positionOverride.Y;
 		
-        if (positionOverride.Length() < 0)
+        if (positionOverride.Length() <= 0)
         {
             // No spawn override.
             x = GD.RandRange(2, tilemap.MapSize - 2);

@@ -3,13 +3,11 @@ using Godot;
 
 namespace Parasite;
 
-public interface IGameEntity
+public interface IGameEntity : IRoshamboUser
 {
     public event TurnCompletedEventHandler TurnEnded;
     
     public bool IsTurnActive { get; }
-    
-    public Roshambo.Option CurrentRoshambo { get; }
     
     public EntityType EntityType { get; }
 

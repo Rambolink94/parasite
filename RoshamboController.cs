@@ -30,15 +30,12 @@ public partial class RoshamboController : Node3D
 			Roshambo.Option.Rock => _rock,
 			Roshambo.Option.Paper => _paper,
 			Roshambo.Option.Scissors => _scissors,
-			_ => throw new ArgumentException($"{option} is not a valid option."),
+			_ => null,
 		};
 
-		if (_previous != null)
-		{
-			_previous.Visible = false;
-		}
-
-		roshambo.Visible = true;
+		if (_previous != null) _previous.Visible = false;
+		if (roshambo != null) roshambo.Visible = true;
+		
 		_previous = roshambo;
 	}
 }

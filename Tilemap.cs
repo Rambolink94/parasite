@@ -90,11 +90,14 @@ public partial class Tilemap : Node3D
 		public bool IsEnterable(EntityType allowedTypes, out ITileOccupier affectedEntity, Roshambo.Option option = Roshambo.Option.None)
 		{
 			affectedEntity = null;
-			if (Occupant == null || 
-			    (allowedTypes.HasFlag(Occupant.EntityType)
-			     && Occupant is IGameEntity entity
-			     && Roshambo.Test(option, entity.CurrentRoshambo)))
+			if (Occupant == null || allowedTypes.HasFlag(Occupant.EntityType))
 			{
+				if (Occupant is IRoshamboUser entity
+				    && !Roshambo.Test(option, entity.CurrentRoshambo))
+				{
+					return false;
+				}
+				
 				affectedEntity = Occupant;
 				return true;
 			}

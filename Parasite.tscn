@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://d1uvmvy75m5nv"]
 
-[ext_resource type="Script" path="res://ParasiteController.cs" id="1_mjdjn"]
+[ext_resource type="Script" path="res://PlayerParasite.cs" id="1_elx3d"]
 
 [node name="Parasite" type="Node3D"]
-script = ExtResource("1_mjdjn")
+script = ExtResource("1_elx3d")

@@ -8,6 +8,7 @@ public partial class GameManager : Node3D
 {
 	[Export] public int WhiteBloodCellSpawnRate { get; set; } = 10;
 	[Export] public int ReRollRate { get; set; } = 10;
+	[Export] public int StartingParasiteLength { get; set; } = 2;
 	[Export] public Vector2 PlayerSpawnOverride { get; set; } = Vector2.Zero;
 	[Export] public Vector2 PlayerSpawnForwardOverride { get; set; } = Vector2.Zero;
 	[Export] public Vector2 WhiteBloodCellSpawnOverride { get; set; } = Vector2.Zero;
@@ -82,7 +83,7 @@ public partial class GameManager : Node3D
 		while (!validEntity && _gameEntities.Count > 0)
 		{
 			_currentEntityTurn = _gameEntities.Dequeue();
-			if (!((Node)_currentEntityTurn).IsQueuedForDeletion())
+			if (_currentEntityTurn is EnvironmentEntity || !((Node)_currentEntityTurn).IsQueuedForDeletion())
 			{
 				validEntity = true;
 			}
@@ -106,7 +107,7 @@ public partial class GameManager : Node3D
 
 			_turnsUntilReRoll--;
 			
-			if (_turnsUntilReRoll == 0)
+			if (_turnsUntilReRoll <= 0)
 			{
 				foreach (IGameEntity entity in _gameEntities)
 				{

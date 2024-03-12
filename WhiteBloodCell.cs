@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Godot;
 
@@ -8,20 +9,8 @@ public partial class WhiteBloodCell : BloodCell, IGameEntity
 	[Export] public float WanderChance { get; set; } = 0.5f;
 	[Export] public int MaxWanderTurns { get; set; } = 5;
 	[Export] public int MinWanderTurns { get; set; } = 1;
-	public bool IsTurnActive { get; private set; }
 	
-	public RoshamboController RoshamboController
-	{
-		get
-		{
-			if (_roshamboController == null)
-			{
-				_roshamboController = GetNode<RoshamboController>("Roshambo");
-			}
-
-			return _roshamboController;
-		}
-	}
+	public bool IsTurnActive { get; private set; }
 	public Roshambo.Option CurrentRoshambo { get; set; }
 	public override EntityType EntityType => EntityType.WhiteBloodCell;
 
@@ -38,6 +27,9 @@ public partial class WhiteBloodCell : BloodCell, IGameEntity
 	{
 		Roshambo.Option roshambo = Roshambo.Role();
 		CurrentRoshambo = roshambo;
+		
+		_roshamboController ??= GetNode<RoshamboController>("Roshambo");
+		_roshamboController.SetRoshambo(roshambo);
 
 		return roshambo;
 	}
@@ -60,15 +52,14 @@ public partial class WhiteBloodCell : BloodCell, IGameEntity
 	
 	private Vector3 DetermineDirection()
 	{
+		var directionInfo = new Dictionary<Vector3, ITileOccupier>();
+		
 		// TODO: Clean this up...it's messy.
-		ITileOccupier affectedEntity = null;
 		Vector3 bestDirection = Vector3.Zero;
 		var chance = GD.Randf();
 		if (!_isWandering && chance <= WanderChance)
 		{
-			_wanderTurn = 0;
-			_requiredWanderTurns = GD.RandRange(MinWanderTurns, MaxWanderTurns);
-			_isWandering = true;
+			SetWandering();
 		}
 		
 		if (_isWandering && _wanderTurn < _requiredWanderTurns)
@@ -80,9 +71,11 @@ public partial class WhiteBloodCell : BloodCell, IGameEntity
 			{
 				Vector3 vec = availableDirections[i];
 
-				if (IsDirectionValid(vec, out affectedEntity))
+				if (IsDirectionValid(vec, out ITileOccupier affectedEntity))
 				{
+					directionInfo.Add(vec, affectedEntity);
 					bestDirection = vec;
+					break;
 				}
 				
 				availableDirections.RemoveAt(i);
@@ -114,11 +107,12 @@ public partial class WhiteBloodCell : BloodCell, IGameEntity
 			var dot = 0f;
 			foreach (Vector3 vec in _possibleDirections)
 			{
-				if (!IsDirectionValid(vec, out affectedEntity))
+				if (!IsDirectionValid(vec, out ITileOccupier affectedEntity))
 				{
 					continue;
 				}
 
+				directionInfo.Add(vec, affectedEntity);
 				var newDot = direction.Dot(vec);
 				if (newDot > dot)
 				{
@@ -127,10 +121,12 @@ public partial class WhiteBloodCell : BloodCell, IGameEntity
 				}
 			}
 		}
-
-		if (affectedEntity is ParasiteSegment parasiteSegment)
+		
+		if (directionInfo.TryGetValue(bestDirection, out ITileOccupier entity)
+		    && entity is ParasiteSegment parasiteSegment)
 		{
 			parasiteSegment.Cut();
+			SetWandering();	// Make cell wonder after doing damage.
 		}
 		
 		return bestDirection;
@@ -140,11 +136,18 @@ public partial class WhiteBloodCell : BloodCell, IGameEntity
 	{
 		entity = null;
 		Tilemap.TileData data = GameManager.Tilemap.GetTileData(GlobalPosition + direction);
-		return data == null
-		       || !data.IsEnterable(
+		return data != null
+		       && data.IsEnterable(
 			       EntityType.Player | EntityType.Parasite,
 			       out entity,
 			       CurrentRoshambo);
+	}
+
+	private void SetWandering()
+	{
+		_wanderTurn = 0;
+		_requiredWanderTurns = GD.RandRange(MinWanderTurns, MaxWanderTurns);
+		_isWandering = true;
 	}
 	
 	private void UpdateTile(Vector3 direction)

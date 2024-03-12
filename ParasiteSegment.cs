@@ -2,7 +2,7 @@ using Godot;
 
 namespace Parasite;
 
-public partial class ParasiteSegment : Node3D, ITileOccupier
+public partial class ParasiteSegment : Node3D, ITileOccupier, IRoshamboUser
 {
 	private PlayerParasite _playerParasite;
 	private RoshamboController _roshamboController;
@@ -22,7 +22,7 @@ public partial class ParasiteSegment : Node3D, ITileOccupier
 		{
 			if (value)
 			{
-				Transform = Transform.Scaled(new Vector3(1.2f, 1.2f, 1.2f));
+				Scale *= Vector3.One * 1.3f;
 			}
 			
 			_isHead = value;

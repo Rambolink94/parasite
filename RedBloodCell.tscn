@@ -1,6 +1,6 @@
 [gd_scene load_steps=6 format=3 uid="uid://bxd44vgfmnfoo"]
 
-[ext_resource type="Script" path="res://BloodCell.cs" id="1_evr17"]
+[ext_resource type="Script" path="res://RedBloodCell.cs" id="1_yc4sg"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_jx6k4"]
 
@@ -20,4 +20,4 @@ material = SubResource("StandardMaterial3D_hl201")
 
 [node name="BloodCell" type="MeshInstance3D"]
 mesh = SubResource("SphereMesh_42c50")
-script = ExtResource("1_evr17")
+script = ExtResource("1_yc4sg")

@@ -1,6 +1,6 @@
 [gd_scene load_steps=7 format=3 uid="uid://ciglbtkqktaxb"]
 
-[ext_resource type="Script" path="res://BloodCell.cs" id="1_8etdl"]
+[ext_resource type="Script" path="res://WhiteBloodCell.cs" id="1_366sa"]
 [ext_resource type="PackedScene" uid="uid://2i32dt265ayw" path="res://Roshambo.tscn" id="2_ijnom"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_jx6k4"]
@@ -13,14 +13,12 @@ noise = SubResource("FastNoiseLite_jx6k4")
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hl201"]
 emission = Color(0.956863, 0.247059, 0.231373, 1)
 normal_texture = SubResource("NoiseTexture2D_ud1dh")
-rim_enabled = true
 
 [sub_resource type="SphereMesh" id="SphereMesh_42c50"]
 material = SubResource("StandardMaterial3D_hl201")
 
 [node name="BloodCell" type="MeshInstance3D"]
 mesh = SubResource("SphereMesh_42c50")
-script = ExtResource("1_8etdl")
-WanderChance = 0.3
+script = ExtResource("1_366sa")
 
 [node name="Roshambo" parent="." instance=ExtResource("2_ijnom")]

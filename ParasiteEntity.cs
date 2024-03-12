@@ -44,6 +44,11 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 	public override void _Process(double delta)
 	{
 	}
+	
+	public void Initialize(Tilemap tilemap)
+	{
+		Tilemap = tilemap;
+	}
 
 	public Roshambo.Option RoleRoshambo()
 	{
@@ -67,8 +72,6 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 	public void HandleCutSegment(ParasiteSegment segment)
 	{
 		var index = Segments.IndexOf(segment);
-
-		ParasiteSegment toRemove = Segments[index];
 		if (index != Segments.Count - 1)
 		{
 			// Set segment after this to new head if not tail
@@ -86,17 +89,22 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 			ParasiteSegment current = Segments[i];
 			Vector3 toSet = previousPosition + (current.IsHead ? offset : Vector3.Zero);
 			previousPosition = current.GlobalPosition;
-
+			
 			bool setNull = i + 1 == Segments.Count || Segments[i + 1].IsHead;
 			
 			MoveSegment(current, toSet, !setNull);
+			if (i + 1 != Segments.Count && Segments[i + 1].IsHead)
+			{
+				previousPosition = Segments[i + 1].GlobalPosition;
+			}
 		}
 	}
 
-	protected virtual ParasiteSegment CreateSegment(Vector3 position, bool deferMove = false)
+	protected virtual ParasiteSegment CreateSegment(Vector3 position, bool deferMove = false, Roshambo.Option option = Roshambo.Option.None)
 	{
 		var segment = _segmentResource.Instantiate<ParasiteSegment>();
 		AddChild(segment);
+		segment.SetRoshambo(option);
 
 		if (!deferMove)
 		{

@@ -35,7 +35,7 @@ public partial class PlayerParasite : ParasiteEntity
 			{
 				if (entity is BloodCell bloodCell)
 				{
-					CreateSegment(position, true);
+					CreateSegment(position, true, CurrentRoshambo);
 					
 					bloodCell.Destroy(!bloodCell.IsWhiteBloodCell);
 				}
@@ -46,9 +46,9 @@ public partial class PlayerParasite : ParasiteEntity
 		}
 	}
 
-	protected override ParasiteSegment CreateSegment(Vector3 position, bool deferMove = false)
+	protected override ParasiteSegment CreateSegment(Vector3 position, bool deferMove = false, Roshambo.Option option = Roshambo.Option.None)
 	{
-		ParasiteSegment segment = base.CreateSegment(position, deferMove);
+		ParasiteSegment segment = base.CreateSegment(position, deferMove, option);
 		segment.SetController(this);
 
 		return segment;

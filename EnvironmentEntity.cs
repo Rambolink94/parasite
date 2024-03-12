@@ -18,10 +18,12 @@ public class EnvironmentEntity : IGameEntity
 	public void BeginTurn()
 	{
 		IsTurnActive = true;
+		EndTurn();
 	}
 
 	public void EndTurn()
 	{
+		IsTurnActive = false;
 		TurnEnded?.Invoke(this);
 	}
 }

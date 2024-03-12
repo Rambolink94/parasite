@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://t808q7xamcvj"]
+[gd_scene load_steps=5 format=3 uid="uid://t808q7xamcvj"]
 
 [ext_resource type="Script" path="res://Tilemap.cs" id="1_o3doh"]
 [ext_resource type="Script" path="res://GameManager.cs" id="2_qsp3h"]
 [ext_resource type="Script" path="res://BloodCellSpawner.cs" id="3_nq4m6"]
+[ext_resource type="Script" path="res://ParasiteSpawner.cs" id="4_fu0fs"]
 
 [node name="Main" type="Node3D"]
 
@@ -19,10 +20,14 @@ transform = Transform3D(1, 0, 0, 0, 0.690062, 0.723751, 0, -0.723751, 0.690062, 
 
 [node name="GameManager" type="Node3D" parent="."]
 script = ExtResource("2_qsp3h")
-WhiteBloodCellSpawnRate = 30
+WhiteBloodCellSpawnRate = 1000
+ReRollRate = 5
 
 [node name="BloodCellSpawner" type="Node3D" parent="GameManager"]
 script = ExtResource("3_nq4m6")
+
+[node name="ParasiteSpawner" type="Node3D" parent="GameManager"]
+script = ExtResource("4_fu0fs")
 
 [node name="TurnLabel" type="Label" parent="."]
 offset_left = 8.0
@@ -38,16 +43,16 @@ offset_right = 48.0
 offset_bottom = 66.0
 text = "999"
 
-[node name="RerollBox" type="HBoxContainer" parent="."]
+[node name="ReRollBox" type="HBoxContainer" parent="."]
 offset_left = 8.0
 offset_top = 80.0
 offset_right = 48.0
 offset_bottom = 120.0
 
-[node name="Label" type="Label" parent="RerollBox"]
+[node name="Label" type="Label" parent="ReRollBox"]
 layout_mode = 2
 text = "Turns Until Reroll:"
 
-[node name="TurnsUntilReRollLabel" type="Label" parent="RerollBox"]
+[node name="TurnsUntilReRollLabel" type="Label" parent="ReRollBox"]
 layout_mode = 2
 text = "999"
