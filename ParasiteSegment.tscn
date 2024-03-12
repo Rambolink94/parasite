@@ -1,8 +1,7 @@
-[gd_scene load_steps=8 format=3 uid="uid://c4q0puymdav0e"]
+[gd_scene load_steps=7 format=3 uid="uid://c4q0puymdav0e"]
 
 [ext_resource type="Script" path="res://ParasiteSegment.cs" id="1_varej"]
 [ext_resource type="PackedScene" uid="uid://2i32dt265ayw" path="res://Roshambo.tscn" id="2_gt1si"]
-[ext_resource type="Script" path="res://RoshamboController.cs" id="3_0iq7i"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_bt8nd"]
 
@@ -26,4 +25,3 @@ mesh = SubResource("SphereMesh_vyog0")
 script = ExtResource("1_varej")
 
 [node name="Roshambo" parent="." instance=ExtResource("2_gt1si")]
-script = ExtResource("3_0iq7i")

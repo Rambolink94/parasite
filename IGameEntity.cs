@@ -8,11 +8,13 @@ public interface IGameEntity
     public event TurnCompletedEventHandler TurnEnded;
     
     public bool IsTurnActive { get; }
-    public Roshambo.Option CurrentRoshambo { get; set; }
+    
+    public Roshambo.Option CurrentRoshambo { get; }
     
     public EntityType EntityType { get; }
 
-    public void BeginTurn(Roshambo.Option option);
+    public Roshambo.Option RoleRoshambo();
+    public void BeginTurn();
     public void EndTurn();
 }
 

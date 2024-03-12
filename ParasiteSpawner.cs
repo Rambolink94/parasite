@@ -2,14 +2,20 @@ using Godot;
 
 namespace Parasite;
 
-public partial class ParasiteSpawner : Node3D, IEntitySpawner<ParasiteEntity>
+public class ParasiteSpawner : IEntitySpawner<ParasiteEntity>
 {
-    private PackedScene _parasiteResource = GD.Load<PackedScene>("res://Parasite.tscn");
+    private readonly PackedScene _parasiteResource = GD.Load<PackedScene>("res://Parasite.tscn");
+    private readonly GameManager _gameManager;
     
-    public T Spawn<T>(GameManager gameManager, Vector2 positionOverride = default)
+    public ParasiteSpawner(GameManager gameManager)
+    {
+        _gameManager = gameManager;
+    }
+    
+    public T Spawn<T>(Vector2 positionOverride = default)
         where T : ParasiteEntity
     {
-        Tilemap tilemap = gameManager.Tilemap;
+        Tilemap tilemap = _gameManager.Tilemap;
         var parasite = _parasiteResource.Instantiate<T>();
         
         var x = positionOverride.X;
@@ -24,7 +30,7 @@ public partial class ParasiteSpawner : Node3D, IEntitySpawner<ParasiteEntity>
 
         // TODO: Move segments, not player
         parasite.GlobalPosition = new Vector3(x, 0f, z * -1);
-        AddChild(parasite);
+        _gameManager.AddChild(parasite);
 		
         var segments = parasite.Segments;
         tilemap.UpdateTileState(segments[0].GlobalPosition, segments[0]);
@@ -33,7 +39,7 @@ public partial class ParasiteSpawner : Node3D, IEntitySpawner<ParasiteEntity>
         return parasite;
     }
 
-    public void Destroy<T>(T entity, GameManager gameManager, bool triggerRespawn = false)
+    public void Destroy<T>(T entity, bool triggerRespawn = false)
         where T : ParasiteEntity
     {
         throw new System.NotImplementedException();

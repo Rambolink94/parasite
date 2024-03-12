@@ -1,4 +1,3 @@
-using System.Linq;
 using Godot;
 
 namespace Parasite;
@@ -21,6 +20,6 @@ public abstract partial class BloodCell : Node3D, ITileOccupier
 	
 	public void Destroy(bool triggerRespawn = false)
 	{
-		_spawner.Destroy(this, GameManager, triggerRespawn);
+		_spawner.Destroy(this, triggerRespawn);
 	}
 }

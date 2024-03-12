@@ -5,7 +5,6 @@ namespace Parasite;
 
 public partial class PlayerParasite : ParasiteEntity
 {
-	
 	public override EntityType EntityType => base.EntityType | EntityType.Player;
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.

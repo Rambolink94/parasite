@@ -3,7 +3,7 @@ using Godot;
 
 namespace Parasite;
 
-public partial class WhiteBloodCell : BloodCell, IRoshamboUser, IGameEntity
+public partial class WhiteBloodCell : BloodCell, IGameEntity
 {
 	[Export] public float WanderChance { get; set; } = 0.5f;
 	[Export] public int MaxWanderTurns { get; set; } = 5;
@@ -34,16 +34,17 @@ public partial class WhiteBloodCell : BloodCell, IRoshamboUser, IGameEntity
 	private int _requiredWanderTurns;
 	private bool _isWandering;
 	
-	public void SetRoshambo(Roshambo.Option option)
+	public Roshambo.Option RoleRoshambo()
 	{
-		CurrentRoshambo = option;
-		RoshamboController.SetRoshambo(option);
+		Roshambo.Option roshambo = Roshambo.Role();
+		CurrentRoshambo = roshambo;
+
+		return roshambo;
 	}
 	
-	public void BeginTurn(Roshambo.Option option)
+	public void BeginTurn()
 	{
 		IsTurnActive = true;
-		SetRoshambo(option);
 
 		Vector3 direction = DetermineDirection();
 		

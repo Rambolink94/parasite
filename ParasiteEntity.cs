@@ -44,11 +44,18 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 	public override void _Process(double delta)
 	{
 	}
+
+	public Roshambo.Option RoleRoshambo()
+	{
+		Roshambo.Option roshambo = Roshambo.Role();
+		CurrentRoshambo = roshambo;
+
+		return roshambo;
+	}
 	
-	public void BeginTurn(Roshambo.Option option)
+	public void BeginTurn()
 	{
 		IsTurnActive = true;
-		CurrentRoshambo = option;
 	}
 
 	public void EndTurn()

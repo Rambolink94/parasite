@@ -1,15 +1,19 @@
-using System;
-using System.Collections.Generic;
 using Godot;
 
 namespace Parasite;
 
-public partial class BloodCellSpawner : Node3D, IEntitySpawner<BloodCell>
+public class BloodCellSpawner : IEntitySpawner<BloodCell>
 {
-	private PackedScene _redBloodCellResource = GD.Load<PackedScene>("res://RedBloodCell.tscn");
-	private PackedScene _whiteBloodCellResource = GD.Load<PackedScene>("res://WhiteBloodCell.tscn");
-
-	public T Spawn<T>(GameManager gameManager, Vector2 positionOverride = default)
+	private readonly PackedScene _redBloodCellResource = GD.Load<PackedScene>("res://RedBloodCell.tscn");
+	private readonly PackedScene _whiteBloodCellResource = GD.Load<PackedScene>("res://WhiteBloodCell.tscn");
+	private readonly GameManager _gameManager;
+	
+	public BloodCellSpawner(GameManager gameManager)
+	{
+		_gameManager = gameManager;
+	}
+	
+	public T Spawn<T>(Vector2 positionOverride = default)
 		where T : BloodCell
 	{
 		PackedScene resource = typeof(T) == typeof(WhiteBloodCell)
@@ -19,26 +23,26 @@ public partial class BloodCellSpawner : Node3D, IEntitySpawner<BloodCell>
 		
 		Vector3 position = positionOverride.Length() > 0
 			? new Vector3(positionOverride.X, 0f, positionOverride.Y)
-			: gameManager.Tilemap.GetOpenTile();
+			: _gameManager.Tilemap.GetOpenTile();
 		
-		bloodCell.Initialize(gameManager, this);
-		AddChild(bloodCell);
+		bloodCell.Initialize(_gameManager, this);
+		_gameManager.AddChild(bloodCell);
 
 		bloodCell.GlobalPosition = position;
-		gameManager.Tilemap.UpdateTileState(position, bloodCell);
+		_gameManager.Tilemap.UpdateTileState(position, bloodCell);
 
 		return bloodCell;
 	}
 
-	public void Destroy<T>(T bloodCell, GameManager gameManager, bool triggerRespawn = false)
+	public void Destroy<T>(T bloodCell, bool triggerRespawn = false)
 		where T : BloodCell
 	{
-		gameManager.Tilemap.UpdateTileState(bloodCell.GlobalPosition, null);
+		_gameManager.Tilemap.UpdateTileState(bloodCell.GlobalPosition, null);
 		bloodCell.QueueFree();
 
 		if (triggerRespawn)
 		{
-			Spawn<T>(gameManager);
+			Spawn<T>();
 		}
 	}
 }
