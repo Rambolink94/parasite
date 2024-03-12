@@ -7,10 +7,14 @@ namespace Parasite;
 public partial class GameManager : Node3D
 {
 	[Export] public int WhiteBloodCellSpawnRate { get; set; } = 10;
+	[Export] public Vector2 PlayerSpawnOverride { get; set; } = Vector2.Zero;
+	[Export] public Vector2 PlayerSpawnForwardOverride { get; set; } = Vector2.Zero;
+	[Export] public Vector2 WhiteBloodCellSpawnOverride { get; set; } = Vector2.Zero;
 	
-	private PackedScene _parasiteResource = GD.Load<PackedScene>("res://Parasite.tscn");
-	
-	private Tilemap _tilemap;
+	public Tilemap Tilemap { get; private set; }
+	public PlayerParasite Player { get; private set; }
+
+	private ParasiteSpawner _parasiteSpawner;
 	private BloodCellSpawner _bloodCellSpawner;
 	private Label _turnLabel;
 	private Label _turnCountLabel;
@@ -23,46 +27,34 @@ public partial class GameManager : Node3D
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
-		_tilemap = GetNode<Tilemap>("../TilemapRoot");
+		Tilemap = GetNode<Tilemap>("../TilemapRoot");
+		_parasiteSpawner = GetNode<ParasiteSpawner>("ParasiteSpawner");
 		_bloodCellSpawner = GetNode<BloodCellSpawner>("BloodCellSpawner");
 		_turnLabel = GetNode<Label>("../TurnLabel");
 		_turnCountLabel = GetNode<Label>("../TurnCountLabel");
 		
 		_turnLabelFormatter = _turnLabel.Text;
 		
-		_tilemap.Generate();
+		Tilemap.Generate();
 		
 		// Handle player
-		var player = _parasiteResource.Instantiate<ParasiteController>();
-		player.SetTilemap(_tilemap);
-		player.TurnEnded += OnTurnCompleted;
+		var player = _parasiteSpawner.Spawn<PlayerParasite>(this);
+		var whiteBloodCell = _bloodCellSpawner.Spawn<WhiteBloodCell>(this);
+		_bloodCellSpawner.Spawn<RedBloodCell>(this);
 
-		_currentEntityTurn = player;
+		Player = player;
+		
+		Enqueue(player);
+		Enqueue(whiteBloodCell);
+		
 		BeginEntityTurn();
-		
-		var randX = GD.RandRange(2, _tilemap.MapSize - 2);
-		var randZ = GD.RandRange(2, _tilemap.MapSize - 2);
-		
-		player.GlobalPosition = new Vector3(randX, 0f, randZ * -1);
-		AddChild(player);
-		
-		var segments = player.Segments;
-		_tilemap.UpdateTileState(segments[0].GlobalPosition, segments[0]);
-		_tilemap.UpdateTileState(segments[1].GlobalPosition, segments[1]);
-		
-		// Handle red blood cell
-		_bloodCellSpawner.Initialize(_tilemap, player);
-		_bloodCellSpawner.SpawnRedBloodCell();
-		
-		// Handle initial white blood cell
-		BloodCell bloodCell = _bloodCellSpawner.SpawnWhiteBloodCell(OnTurnCompleted);
-		
-		_gameEntities.Enqueue(bloodCell);
 	}
 
-	// Called every frame. 'delta' is the elapsed time since the previous frame.
-	public override void _Process(double delta)
+	private void Enqueue(IGameEntity entity)
 	{
+		entity.TurnEnded += OnTurnCompleted;
+			
+		_gameEntities.Enqueue(entity);
 	}
 
 	private void OnTurnCompleted(IGameEntity entity)
@@ -72,22 +64,25 @@ public partial class GameManager : Node3D
 			throw new InvalidOperationException("A turn was ended for an entity who turn it was not.");
 		}
 
-		if (entity.EntityType.HasFlag(EntityType.Player) && _turnCount % WhiteBloodCellSpawnRate == 0)
+		if (entity is PlayerParasite && _turnCount % WhiteBloodCellSpawnRate == 0)
 		{
-			BloodCell bloodCell = _bloodCellSpawner.SpawnWhiteBloodCell(OnTurnCompleted);
-			
-			_gameEntities.Enqueue(bloodCell);
+			var bloodCell = _bloodCellSpawner.Spawn<WhiteBloodCell>(this);
+			Enqueue(bloodCell);
 		}
 
 		_gameEntities.Enqueue(entity);	// Add original entity back onto queue to reprocess turn.
 		
-		bool validEntity = false;
+		var validEntity = false;
 		while (!validEntity && _gameEntities.Count > 0)
 		{
 			_currentEntityTurn = _gameEntities.Dequeue();
 			if (!((Node)_currentEntityTurn).IsQueuedForDeletion())
 			{
 				validEntity = true;
+			}
+			else
+			{
+				_currentEntityTurn.TurnEnded -= OnTurnCompleted;
 			}
 		}
 		
@@ -96,6 +91,11 @@ public partial class GameManager : Node3D
 
 	private void BeginEntityTurn()
 	{
+		if (_currentEntityTurn == null)
+		{
+			_currentEntityTurn = _gameEntities.Dequeue();
+		}
+		
 		if (_currentEntityTurn.EntityType.HasFlag(EntityType.Player))
 		{
 			_turnCount++;

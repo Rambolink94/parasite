@@ -1,6 +1,6 @@
 namespace Parasite;
 
-public interface ITileOccupier : IRoshamboUser
+public interface ITileOccupier
 {
 	public EntityType EntityType { get; }
 }

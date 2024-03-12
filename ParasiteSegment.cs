@@ -4,21 +4,12 @@ namespace Parasite;
 
 public partial class ParasiteSegment : Node3D, ITileOccupier
 {
+	private PlayerParasite _playerParasite;
 	private RoshamboController _roshamboController;
 	private bool _isHead;
 
-	public RoshamboController RoshamboController
-	{
-		get
-		{
-			if (_roshamboController == null)
-			{
-				_roshamboController = GetNode<RoshamboController>("Roshambo");
-			}
-
-			return _roshamboController;
-		}
-	}
+	public RoshamboController RoshamboController =>
+		_roshamboController ??= GetNode<RoshamboController>("Roshambo");
 	
 	public Roshambo.Option CurrentRoshambo { get; set; }
 
@@ -38,9 +29,21 @@ public partial class ParasiteSegment : Node3D, ITileOccupier
 		}
 	}
 
+	public void SetController(PlayerParasite controller)
+	{
+		_playerParasite = controller;
+	}
+
 	public void SetRoshambo(Roshambo.Option option)
 	{
 		CurrentRoshambo = option;
 		RoshamboController.SetRoshambo(option);
+	}
+
+	public void Cut()
+	{
+		_playerParasite.HandleCutSegment(this);
+		
+		QueueFree();
 	}
 }

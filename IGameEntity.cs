@@ -7,6 +7,7 @@ public interface IGameEntity
 {
     public event TurnCompletedEventHandler TurnEnded;
     
+    public bool IsTurnActive { get; }
     public Roshambo.Option CurrentRoshambo { get; set; }
     
     public EntityType EntityType { get; }

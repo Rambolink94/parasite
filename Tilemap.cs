@@ -67,7 +67,7 @@ public partial class Tilemap : Node3D
 
 	public Vector3 GetOpenTile()
 	{
-		var openCells = _tileData.Where(x => x.IsEnterable(EntityType.None)).ToList();
+		var openCells = _tileData.Where(x => x.IsEnterable(EntityType.None, out _)).ToList();
 		var index = GD.Randi() % openCells.Count;	// TODO: If no open cells, end game.
 
 		return openCells[(int)index].GlobalPosition;
@@ -81,17 +81,21 @@ public partial class Tilemap : Node3D
 			TileMesh = tileMesh;
 		}
 		
-		public Vector3 GlobalPosition { get; set; }
+		public Vector3 GlobalPosition { get; }
 		
 		public ITileOccupier Occupant { get; set; }
 		
 		public MeshInstance3D TileMesh { get; }
 		
-		public bool IsEnterable(EntityType allowedTypes, Roshambo.Option option = Roshambo.Option.None)
+		public bool IsEnterable(EntityType allowedTypes, out ITileOccupier affectedEntity, Roshambo.Option option = Roshambo.Option.None)
 		{
+			affectedEntity = null;
 			if (Occupant == null || 
-			    (allowedTypes.HasFlag(Occupant.EntityType) && Roshambo.Test(option, Occupant.CurrentRoshambo)))
+			    (allowedTypes.HasFlag(Occupant.EntityType)
+			     && Occupant is IGameEntity entity
+			     && Roshambo.Test(option, entity.CurrentRoshambo)))
 			{
+				affectedEntity = Occupant;
 				return true;
 			}
 
