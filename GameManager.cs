@@ -79,6 +79,7 @@ public partial class GameManager : Node3D
 			}
 			
 			// TODO: Display game ended screen
+			_turnLabel.Text = "GAME ENDED";
 			return;
 		}
 		

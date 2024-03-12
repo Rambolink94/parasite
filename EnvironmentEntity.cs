@@ -7,7 +7,7 @@ public class EnvironmentEntity : IGameEntity
 	public event TurnCompletedEventHandler TurnEnded;
 	public event Action RoshamboChanged;
 	public bool IsTurnActive { get; private set; }
-	public Roshambo.Option CurrentRoshambo { get; set; }
+	public Roshambo.Option CurrentRoshambo { get; private set; }
 	public EntityType EntityType => EntityType.None;
 	
 	public Roshambo.Option RoleRoshambo()

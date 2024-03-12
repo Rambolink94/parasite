@@ -18,7 +18,7 @@ public partial class PlayerParasite : ParasiteEntity
 
 		if (!_processedDirections)
 		{
-			_availableDirections = AvailableDirections();
+			_availableDirections = GetAvailableDirections();
 			_processedDirections = true;
 		}
 		
@@ -38,13 +38,18 @@ public partial class PlayerParasite : ParasiteEntity
 		if (Input.IsActionJustPressed("parasite_back"))
 			input = Vector3.Back;
 
-		if (input.Length() > 0)
+		if (input.Length() > 0 && _availableDirections.Contains(input))
 		{
 			Move(input);
 
 			_processedDirections = false;
 			EndTurn();
 		}
+	}
+
+	public override void BeginTurn()
+	{
+		IsTurnActive = true;
 	}
 
 	protected override ParasiteSegment CreateSegment(

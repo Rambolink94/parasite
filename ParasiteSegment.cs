@@ -33,6 +33,7 @@ public partial class ParasiteSegment : Node3D, ITileOccupier, IRoshamboUser
 	public void Initialize(ParasiteEntity parent)
 	{
 		Parent = parent;
+		OnRoshamboChanged();
 	}
 
 	public void OnRoshamboChanged()

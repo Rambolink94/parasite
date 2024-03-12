@@ -37,12 +37,13 @@ public class BloodCellSpawner : IEntitySpawner<BloodCell>
 	public void Destroy<T>(T bloodCell, bool triggerRespawn = false)
 		where T : BloodCell
 	{
-		_gameManager.Tilemap.UpdateTileState(bloodCell.GlobalPosition, null);
-		bloodCell.QueueFree();
-
+		// Respawn before updating tile so that same tile isn't selected
 		if (triggerRespawn)
 		{
 			Spawn<T>();
 		}
+		
+		_gameManager.Tilemap.UpdateTileState(bloodCell.GlobalPosition, null);
+		bloodCell.QueueFree();
 	}
 }

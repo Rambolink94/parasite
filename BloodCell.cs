@@ -9,8 +9,8 @@ public abstract partial class BloodCell : Node3D, ITileOccupier
 	private BloodCellSpawner _spawner;
 	
 	public abstract EntityType EntityType { get; }
-	
-	public bool IsWhiteBloodCell { get; private set; }
+
+	public bool IsWhiteBloodCell => GetType() == typeof(WhiteBloodCell);
 	
 	public void Initialize(GameManager gameManager, BloodCellSpawner spawner)
 	{

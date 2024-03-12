@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using Godot;
 
@@ -67,16 +68,21 @@ public partial class Tilemap : Node3D
 
 	public Vector3 GetOpenTile()
 	{
-		var openCells = _tileData.Where(x => x.IsEnterable(EntityType.None, out _)).ToList();
-		var index = GD.Randi() % openCells.Count;	// TODO: If no open cells, end game.
+		var openTiles = _tileData.Where(x => x.IsEnterable(EntityType.None, out _)).ToList();
+		var index = GD.Randi() % openTiles.Count;	// TODO: If no open tiles, end game.
 
-		return openCells[(int)index].GlobalPosition;
+		TileData cell = openTiles[(int)index];
+		Debug.Assert(cell.Occupant == null);
+		
+		return cell.GlobalPosition;
 	}
 
 	public bool IsTileEnterable(Vector3 globalPosition, EntityType allowedTypes, out ITileOccupier affectedEntity, Roshambo.Option option = Roshambo.Option.None)
 	{
+		affectedEntity = null;
+		
 		TileData tile = GetTileData(globalPosition);
-		return tile.IsEnterable(allowedTypes, out affectedEntity, option);
+		return tile?.IsEnterable(allowedTypes, out affectedEntity, option) ?? false;
 	}
 
 	public class TileData

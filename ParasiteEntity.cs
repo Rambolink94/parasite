@@ -9,7 +9,7 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 {
 	private PackedScene _segmentResource = GD.Load<PackedScene>("res://ParasiteSegment.tscn");
 
-	protected Tilemap Tilemap;
+	private Tilemap _tilemap;
 	private Roshambo.Option _currentRoshamboOption;
 	
 	public Roshambo.Option CurrentRoshambo
@@ -23,7 +23,7 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 		}
 	}
 
-	public bool IsTurnActive { get; private set; }
+	public bool IsTurnActive { get; protected set; }
 
 	public event TurnCompletedEventHandler TurnEnded;
 	public event Action RoshamboChanged;
@@ -48,7 +48,7 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 	
 	public void Initialize(Tilemap tilemap)
 	{
-		Tilemap = tilemap;
+		_tilemap = tilemap;
 	}
 
 	public Roshambo.Option RoleRoshambo()
@@ -59,9 +59,19 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 		return roshambo;
 	}
 	
-	public void BeginTurn()
+	public virtual void BeginTurn()
 	{
 		IsTurnActive = true;
+
+		var directions = GetAvailableDirections();
+		
+		// TODO: Finish parasite movement
+		// Get nearest red blood cell
+		// Get nearest white blood cell
+		// Get nearest parasite body segment
+		// - Equal priority, though the winning roshambo will be chosen
+		// Get nearest parasite head
+		// - Move away from head if head will reach you before you can consume.
 	}
 
 	public void EndTurn(bool triggerGameEnd = false)
@@ -86,7 +96,7 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 	protected void Move(Vector3 direction)
 	{
 		Vector3 position = Segments[0].GlobalPosition + direction;
-		if (Tilemap.IsTileEnterable(position, EntityType.BloodCell | EntityType.Parasite, out ITileOccupier entity, CurrentRoshambo))
+		if (_tilemap.IsTileEnterable(position, EntityType.BloodCell | EntityType.Parasite, out ITileOccupier entity, CurrentRoshambo))
 		{
 			if (entity is BloodCell bloodCell)
 			{
@@ -109,7 +119,7 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 		}
 	}
 	
-	protected List<Vector3> AvailableDirections()
+	protected List<Vector3> GetAvailableDirections()
 	{
 		var availableDirection = new List<Vector3>();
 		var heads = Segments.Where(x => x.IsHead);
@@ -117,7 +127,7 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 		{
 			foreach (Vector3 direction in GameManager.PossibleDirections)
 			{
-				if (Tilemap.IsTileEnterable(head.GlobalPosition + direction,
+				if (_tilemap.IsTileEnterable(head.GlobalPosition + direction,
 					    EntityType.BloodCell | EntityType.Parasite,
 					    out ITileOccupier affectedEntity,
 					    CurrentRoshambo)
@@ -171,10 +181,10 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 	{
 		if (!ignoreNullSet)
 		{
-			Tilemap.UpdateTileState(segment.GlobalPosition, null);
+			_tilemap.UpdateTileState(segment.GlobalPosition, null);
 		}
 
 		segment.GlobalPosition = position;
-		Tilemap.UpdateTileState(position, segment);
+		_tilemap.UpdateTileState(position, segment);
 	}
 }
