@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 
 namespace Parasite;
@@ -13,20 +15,19 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 	public Roshambo.Option CurrentRoshambo
 	{
 		get => _currentRoshamboOption;
-		set
+		private set
 		{
 			_currentRoshamboOption = value;
 			
-			foreach (ParasiteSegment segment in Segments)
-			{
-				segment.SetRoshambo(value);
-			}
+			RoshamboChanged?.Invoke();
 		}
 	}
 
 	public bool IsTurnActive { get; private set; }
 
 	public event TurnCompletedEventHandler TurnEnded;
+	public event Action RoshamboChanged;
+		
 	public List<ParasiteSegment> Segments { get; } = new();
 	
 	public virtual EntityType EntityType => EntityType.Parasite;
@@ -63,10 +64,10 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 		IsTurnActive = true;
 	}
 
-	public void EndTurn()
+	public void EndTurn(bool triggerGameEnd = false)
 	{
 		IsTurnActive = false;
-		TurnEnded?.Invoke(this);
+		TurnEnded?.Invoke(this, triggerGameEnd);
 	}
 	
 	public void HandleCutSegment(ParasiteSegment segment)
@@ -77,8 +78,58 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 			// Set segment after this to new head if not tail
 			Segments[index + 1].IsHead = true;
 		}
-		
+
+		RoshamboChanged -= segment.OnRoshamboChanged;
 		Segments.Remove(segment);
+	}
+
+	protected void Move(Vector3 direction)
+	{
+		Vector3 position = Segments[0].GlobalPosition + direction;
+		if (Tilemap.IsTileEnterable(position, EntityType.BloodCell | EntityType.Parasite, out ITileOccupier entity, CurrentRoshambo))
+		{
+			if (entity is BloodCell bloodCell)
+			{
+				CreateSegment(position, true, CurrentRoshambo);
+					
+				bloodCell.Destroy(!bloodCell.IsWhiteBloodCell);
+			}
+			else if (entity is ParasiteSegment segment)
+			{
+				if (segment.Parent == this)
+				{
+					// Attempt to move into self
+					return;
+				}
+					
+				segment.Cut();
+			}
+
+			UpdateSegments(direction);
+		}
+	}
+	
+	protected List<Vector3> AvailableDirections()
+	{
+		var availableDirection = new List<Vector3>();
+		var heads = Segments.Where(x => x.IsHead);
+		foreach (ParasiteSegment head in heads)
+		{
+			foreach (Vector3 direction in GameManager.PossibleDirections)
+			{
+				if (Tilemap.IsTileEnterable(head.GlobalPosition + direction,
+					    EntityType.BloodCell | EntityType.Parasite,
+					    out ITileOccupier affectedEntity,
+					    CurrentRoshambo)
+				    && (affectedEntity == null
+				        || !affectedEntity.EntityType.HasFlag(EntityType.Player)))
+				{
+					availableDirection.Add(direction);
+				}
+			}
+		}
+
+		return availableDirection;
 	}
 	
 	protected void UpdateSegments(Vector3 offset)
@@ -104,7 +155,7 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 	{
 		var segment = _segmentResource.Instantiate<ParasiteSegment>();
 		AddChild(segment);
-		segment.SetRoshambo(option);
+		RoshamboChanged += segment.OnRoshamboChanged;
 
 		if (!deferMove)
 		{

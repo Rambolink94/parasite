@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Godot;
@@ -11,13 +12,13 @@ public partial class WhiteBloodCell : BloodCell, IGameEntity
 	[Export] public int MinWanderTurns { get; set; } = 1;
 	
 	public bool IsTurnActive { get; private set; }
-	public Roshambo.Option CurrentRoshambo { get; set; }
+	public Roshambo.Option CurrentRoshambo { get; private set; }
 	public override EntityType EntityType => EntityType.WhiteBloodCell;
 
 	public event TurnCompletedEventHandler TurnEnded;
+	public event Action RoshamboChanged;
 
 	private RoshamboController _roshamboController;
-	private readonly Vector3[] _possibleDirections = { Vector3.Left, Vector3.Forward, Vector3.Right, Vector3.Back };
 	
 	private int _wanderTurn;
 	private int _requiredWanderTurns;
@@ -44,10 +45,10 @@ public partial class WhiteBloodCell : BloodCell, IGameEntity
 		EndTurn();
 	}
 
-	public void EndTurn()
+	public void EndTurn(bool triggerGameEnd = false)
 	{
 		IsTurnActive = false;
-		TurnEnded?.Invoke(this);
+		TurnEnded?.Invoke(this, triggerGameEnd);
 	}
 	
 	private Vector3 DetermineDirection()
@@ -66,7 +67,7 @@ public partial class WhiteBloodCell : BloodCell, IGameEntity
 		{
 			_wanderTurn++;
 			
-			var availableDirections = _possibleDirections.ToList();
+			var availableDirections = GameManager.PossibleDirections.ToList();
 			for (var i = (int)(GD.Randi() % (availableDirections.Count - 1)); i >= 0 && availableDirections.Count > 0;)
 			{
 				Vector3 vec = availableDirections[i];
@@ -105,7 +106,7 @@ public partial class WhiteBloodCell : BloodCell, IGameEntity
 			Vector3 direction = (minSegment.GlobalPosition - GlobalPosition).Normalized();
 
 			var dot = 0f;
-			foreach (Vector3 vec in _possibleDirections)
+			foreach (Vector3 vec in GameManager.PossibleDirections)
 			{
 				if (!IsDirectionValid(vec, out ITileOccupier affectedEntity))
 				{

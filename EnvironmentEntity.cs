@@ -1,8 +1,11 @@
+using System;
+
 namespace Parasite;
 
 public class EnvironmentEntity : IGameEntity
 {
 	public event TurnCompletedEventHandler TurnEnded;
+	public event Action RoshamboChanged;
 	public bool IsTurnActive { get; private set; }
 	public Roshambo.Option CurrentRoshambo { get; set; }
 	public EntityType EntityType => EntityType.None;
@@ -21,9 +24,9 @@ public class EnvironmentEntity : IGameEntity
 		EndTurn();
 	}
 
-	public void EndTurn()
+	public void EndTurn(bool triggerGameEnd = false)
 	{
 		IsTurnActive = false;
-		TurnEnded?.Invoke(this);
+		TurnEnded?.Invoke(this, triggerGameEnd);
 	}
 }

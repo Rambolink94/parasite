@@ -73,6 +73,12 @@ public partial class Tilemap : Node3D
 		return openCells[(int)index].GlobalPosition;
 	}
 
+	public bool IsTileEnterable(Vector3 globalPosition, EntityType allowedTypes, out ITileOccupier affectedEntity, Roshambo.Option option = Roshambo.Option.None)
+	{
+		TileData tile = GetTileData(globalPosition);
+		return tile.IsEnterable(allowedTypes, out affectedEntity, option);
+	}
+
 	public class TileData
 	{
 		public TileData(Vector3 globalPosition, MeshInstance3D tileMesh)

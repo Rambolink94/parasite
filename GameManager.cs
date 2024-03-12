@@ -15,6 +15,8 @@ public partial class GameManager : Node3D
 	
 	public Tilemap Tilemap { get; private set; }
 	public PlayerParasite Player { get; private set; }
+	
+	public static readonly Vector3[] PossibleDirections = { Vector3.Left, Vector3.Forward, Vector3.Right, Vector3.Back };
 
 	private ParasiteSpawner _parasiteSpawner;
 	private BloodCellSpawner _bloodCellSpawner;
@@ -64,8 +66,22 @@ public partial class GameManager : Node3D
 		_gameEntities.Enqueue(entity);
 	}
 
-	private void OnTurnCompleted(IGameEntity entity)
+	private void OnTurnCompleted(IGameEntity entity, bool triggerGameEnd = false)
 	{
+		if (triggerGameEnd)
+		{
+			entity.TurnEnded -= OnTurnCompleted;
+			
+			while (_gameEntities.Count > 0)
+			{
+				IGameEntity entityToCleanup = _gameEntities.Dequeue();
+				entityToCleanup.TurnEnded -= OnTurnCompleted;
+			}
+			
+			// TODO: Display game ended screen
+			return;
+		}
+		
 		if (_currentEntityTurn != entity)
 		{
 			throw new InvalidOperationException("A turn was ended for an entity who turn it was not.");

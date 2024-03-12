@@ -6,6 +6,7 @@ namespace Parasite;
 public interface IGameEntity : IRoshamboUser
 {
     public event TurnCompletedEventHandler TurnEnded;
+    public event Action RoshamboChanged; 
     
     public bool IsTurnActive { get; }
     
@@ -13,10 +14,10 @@ public interface IGameEntity : IRoshamboUser
 
     public Roshambo.Option RoleRoshambo();
     public void BeginTurn();
-    public void EndTurn();
+    public void EndTurn(bool triggerGameEnd = false);
 }
 
-public delegate void TurnCompletedEventHandler(IGameEntity entity);
+public delegate void TurnCompletedEventHandler(IGameEntity entity, bool triggerGameEnd = false);
 
 [Flags]
 public enum EntityType
