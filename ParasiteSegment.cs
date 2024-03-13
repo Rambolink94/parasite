@@ -2,7 +2,7 @@ using Godot;
 
 namespace Parasite;
 
-public partial class ParasiteSegment : Node3D, ITileOccupier, IRoshamboUser
+public partial class ParasiteSegment : MeshInstance3D, ITileOccupier, IRoshamboUser
 {
 	private RoshamboController _roshamboController;
 	private bool _isHead;
@@ -11,7 +11,7 @@ public partial class ParasiteSegment : Node3D, ITileOccupier, IRoshamboUser
 	
 	public ParasiteEntity Parent { get; private set; }
 
-	public EntityType EntityType => EntityType.Player | EntityType.Parasite;
+	public EntityType EntityType => Parent.EntityType;
 	
 	private RoshamboController RoshamboController =>
 		_roshamboController ??= GetNode<RoshamboController>("Roshambo");

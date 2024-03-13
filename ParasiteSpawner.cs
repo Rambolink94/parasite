@@ -17,8 +17,12 @@ public class ParasiteSpawner : IEntitySpawner<ParasiteEntity>
     {
         Tilemap tilemap = _gameManager.Tilemap;
         var parasite = _parasiteResource.Instantiate<T>();
-        
-        parasite.Initialize(_gameManager.Tilemap);
+
+        var r = GD.Randi() % 255;
+        var g = GD.Randi() % 255;
+        var b = GD.Randi() % 255;
+
+        var color = new Color(r, g, b, 255f);
         
         var x = positionOverride.X;
         var z = positionOverride.Y;
@@ -29,14 +33,9 @@ public class ParasiteSpawner : IEntitySpawner<ParasiteEntity>
             x = GD.RandRange(2, tilemap.MapSize - 2);
             z = GD.RandRange(2, tilemap.MapSize - 2);
         }
-
-        // TODO: Move segments, not player
-        parasite.GlobalPosition = new Vector3(x, 0f, z * -1);
+        
         _gameManager.AddChild(parasite);
-		
-        var segments = parasite.Segments;
-        tilemap.UpdateTileState(segments[0].GlobalPosition, segments[0]);
-        tilemap.UpdateTileState(segments[1].GlobalPosition, segments[1]);
+        parasite.Initialize(_gameManager, color, new Vector3(x, 0f, z * -1));
 
         return parasite;
     }

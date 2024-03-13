@@ -9,8 +9,10 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 {
 	private PackedScene _segmentResource = GD.Load<PackedScene>("res://ParasiteSegment.tscn");
 
-	private Tilemap _tilemap;
+	private GameManager _gameManager;
+	private Color _color;
 	private Roshambo.Option _currentRoshamboOption;
+	private StandardMaterial3D _materialOverride;
 	
 	public Roshambo.Option CurrentRoshambo
 	{
@@ -32,23 +34,15 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 	
 	public virtual EntityType EntityType => EntityType.Parasite;
 	
-	// Called when the node enters the scene tree for the first time.
-	public override void _Ready()
+	public void Initialize(GameManager gameManager, Color color, Vector3 position)
 	{
-		ParasiteSegment head = CreateSegment(GlobalPosition);
-		CreateSegment(GlobalPosition - Vector3.Back);
+		_gameManager = gameManager;
+		_color = color;
+		
+		ParasiteSegment head = CreateSegment(position);
+		CreateSegment(position - Vector3.Back);
 
 		head.IsHead = true;
-	}
-
-	// Called every frame. 'delta' is the elapsed time since the previous frame.
-	public override void _Process(double delta)
-	{
-	}
-	
-	public void Initialize(Tilemap tilemap)
-	{
-		_tilemap = tilemap;
 	}
 
 	public Roshambo.Option RoleRoshambo()
@@ -66,12 +60,56 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 		var directions = GetAvailableDirections();
 		
 		// TODO: Finish parasite movement
-		// Get nearest red blood cell
-		// Get nearest white blood cell
-		// Get nearest parasite body segment
-		// - Equal priority, though the winning roshambo will be chosen
-		// Get nearest parasite head
+		// Get all occupied tiles who, if segments, do not belong to this.
+		var occupiedTiles = _gameManager.Tilemap.Tiles
+			.Where(x => x.Occupant != null
+			            && !(x.Occupant is ParasiteSegment segment
+			                 && segment.Parent == this)).ToList();
+
+		var randomIndex = GD.Randi() % occupiedTiles.Count - 1;
+		Tilemap.TileData bestTile = occupiedTiles[(int)randomIndex];
+		float bestDistance = float.MaxValue;
+		foreach (var head in Segments.Where(x => x.IsHead))
+		{
+			foreach (Tilemap.TileData tile in occupiedTiles)
+			{
+				var distance = GlobalPosition.DistanceTo(tile.GlobalPosition);
+				if (distance < bestDistance)
+				{
+					// If closest tile has winning roshambo and the distance
+					// would not result in a possibly different roshambo, then skip.
+					if (tile.Occupant is IRoshamboUser user
+					    && !Roshambo.Test(CurrentRoshambo, user.CurrentRoshambo)
+					    && _gameManager.TurnsUntilReRoll > distance * 2)
+					{
+						continue;
+					}
+					
+					bestDistance = distance;
+					bestTile = tile;
+				}
+			}
+		}
+		
+		// TODO: Get nearest parasite head
 		// - Move away from head if head will reach you before you can consume.
+
+		Vector3 bestDirection = directions[0];
+		Vector3 direction = (bestTile.GlobalPosition - GlobalPosition).Normalized();
+		var dot = 0f;
+		foreach (Vector3 vec in directions)
+		{
+			var newDot = direction.Dot(vec);
+			if (newDot > dot)
+			{
+				dot = newDot;
+				bestDirection = vec;
+			}
+		}
+		
+		Move(bestDirection);
+		
+		EndTurn();
 	}
 
 	public void EndTurn(bool triggerGameEnd = false)
@@ -95,27 +133,31 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 
 	protected void Move(Vector3 direction)
 	{
-		Vector3 position = Segments[0].GlobalPosition + direction;
-		if (_tilemap.IsTileEnterable(position, EntityType.BloodCell | EntityType.Parasite, out ITileOccupier entity, CurrentRoshambo))
+		foreach (ParasiteSegment head in Segments.Where(x => x.IsHead).ToList())
 		{
-			if (entity is BloodCell bloodCell)
+			int index = Segments.IndexOf(head);
+			Vector3 position = Segments[index].GlobalPosition + direction;
+			if (_gameManager.Tilemap.IsTileEnterable(position, EntityType.BloodCell | EntityType.Parasite, out ITileOccupier entity, CurrentRoshambo))
 			{
-				CreateSegment(position, true, CurrentRoshambo);
-					
-				bloodCell.Destroy(!bloodCell.IsWhiteBloodCell);
-			}
-			else if (entity is ParasiteSegment segment)
-			{
-				if (segment.Parent == this)
+				if (entity is BloodCell bloodCell)
 				{
-					// Attempt to move into self
-					return;
-				}
+					CreateSegment(position, true, index);
 					
-				segment.Cut();
-			}
+					bloodCell.Destroy(!bloodCell.IsWhiteBloodCell);
+				}
+				else if (entity is ParasiteSegment segment)
+				{
+					if (segment.Parent == this)
+					{
+						// Attempt to move into self
+						return;
+					}
+					
+					segment.Cut();
+				}
 
-			UpdateSegments(direction);
+				UpdateSegments(direction, index);
+			}
 		}
 	}
 	
@@ -127,7 +169,7 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 		{
 			foreach (Vector3 direction in GameManager.PossibleDirections)
 			{
-				if (_tilemap.IsTileEnterable(head.GlobalPosition + direction,
+				if (_gameManager.Tilemap.IsTileEnterable(head.GlobalPosition + direction,
 					    EntityType.BloodCell | EntityType.Parasite,
 					    out ITileOccupier affectedEntity,
 					    CurrentRoshambo)
@@ -142,7 +184,7 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 		return availableDirection;
 	}
 	
-	protected void UpdateSegments(Vector3 offset)
+	private void UpdateSegments(Vector3 offset)
 	{
 		Vector3 previousPosition = Segments[0].GlobalPosition;
 		for (int i = 0; i < Segments.Count; i++)
@@ -160,10 +202,45 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 			}
 		}
 	}
+	
+	private void UpdateSegments(Vector3 offset, int startIndex)
+	{
+		Vector3 previousPosition = Segments[startIndex].GlobalPosition;
+		for (int i = startIndex; i < Segments.Count; i++)
+		{
+			ParasiteSegment current = Segments[i];
+			if (i != startIndex && current.IsHead)
+			{
+				break;
+			}
+				
+			Vector3 toSet = previousPosition + (current.IsHead ? offset : Vector3.Zero);
+			previousPosition = current.GlobalPosition;
+			
+			bool setNull = i + 1 == Segments.Count || Segments[i + 1].IsHead;
+			
+			MoveSegment(current, toSet, !setNull);
+		}
+	}
 
-	protected virtual ParasiteSegment CreateSegment(Vector3 position, bool deferMove = false, Roshambo.Option option = Roshambo.Option.None)
+	protected virtual ParasiteSegment CreateSegment(
+		Vector3 position,
+		bool deferMove = false,
+		int headIndex = 0)
 	{
 		var segment = _segmentResource.Instantiate<ParasiteSegment>();
+		//StandardMaterial3D material = GetOrCreateMaterialOverride(segment, _color);
+
+		//segment.SetSurfaceOverrideMaterial(0, material);
+		// segment.MaterialOverride.Set("albedo_color", _color);
+		if (segment.MaterialOverride is not StandardMaterial3D material)
+		{
+			throw new NullReferenceException("The segment did not have a material override");
+		}
+		
+		material.AlbedoColor = _color;
+		segment.MaterialOverride = material;
+		
 		AddChild(segment);
 		RoshamboChanged += segment.OnRoshamboChanged;
 
@@ -172,7 +249,21 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 			MoveSegment(segment, position);
 		}
 		
-		Segments.Add(segment);
+		var index = headIndex + 1;
+		while (index < Segments.Count && !Segments[index].IsHead)
+		{
+			index++;
+		}
+
+		try
+		{
+			Segments.Insert(index, segment);
+		}
+		catch (ArgumentOutOfRangeException )
+		{
+			// Index is at end of segments, so just add it.
+			Segments.Add(segment);
+		}
 
 		return segment;
 	}
@@ -181,10 +272,24 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 	{
 		if (!ignoreNullSet)
 		{
-			_tilemap.UpdateTileState(segment.GlobalPosition, null);
+			_gameManager.Tilemap.UpdateTileState(segment.GlobalPosition, null);
 		}
 
 		segment.GlobalPosition = position;
-		_tilemap.UpdateTileState(position, segment);
+		_gameManager.Tilemap.UpdateTileState(position, segment);
+	}
+	
+	private StandardMaterial3D GetOrCreateMaterialOverride(ParasiteSegment segment, Color color)
+	{
+		if (_materialOverride != null) return _materialOverride;
+		
+		// Material material = segment.Mesh.SurfaceGetMaterial(0);
+		// _materialOverride = (StandardMaterial3D)material.Duplicate();
+
+		_materialOverride = new StandardMaterial3D();
+
+		_materialOverride.AlbedoColor = color;
+
+		return _materialOverride;
 	}
 }

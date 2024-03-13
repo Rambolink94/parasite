@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 
 namespace Parasite;
@@ -9,13 +10,16 @@ public partial class GameManager : Node3D
 	[Export] public int WhiteBloodCellSpawnRate { get; set; } = 10;
 	[Export] public int ReRollRate { get; set; } = 10;
 	[Export] public int StartingParasiteLength { get; set; } = 2;
+	[Export] public int SpawnProximityBuffer { get; set; } = 2;
 	[Export] public Vector2 PlayerSpawnOverride { get; set; } = Vector2.Zero;
 	[Export] public Vector2 PlayerSpawnForwardOverride { get; set; } = Vector2.Zero;
 	[Export] public Vector2 WhiteBloodCellSpawnOverride { get; set; } = Vector2.Zero;
 	
 	public Tilemap Tilemap { get; private set; }
 	public PlayerParasite Player { get; private set; }
-	
+	public IEnumerable<IGameEntity> Entities => _gameEntities.ToList();
+	public int TurnsUntilReRoll { get; private set; }
+
 	public static readonly Vector3[] PossibleDirections = { Vector3.Left, Vector3.Forward, Vector3.Right, Vector3.Back };
 
 	private ParasiteSpawner _parasiteSpawner;
@@ -28,8 +32,7 @@ public partial class GameManager : Node3D
 	private IGameEntity _currentEntityTurn;
 	private readonly Queue<IGameEntity> _gameEntities = new();
 	private int _turnResolutions;
-	private int _turnsUntilReRoll;
-	
+
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
@@ -45,8 +48,10 @@ public partial class GameManager : Node3D
 		
 		Tilemap.Generate();
 
+		// TODO: Handle spawn proximity buffer logic.
 		var environment = new EnvironmentEntity();
 		var player = _parasiteSpawner.Spawn<PlayerParasite>();
+		//var enemyParasite = _parasiteSpawner.Spawn<ParasiteEntity>();
 		var whiteBloodCell = _bloodCellSpawner.Spawn<WhiteBloodCell>();
 		_bloodCellSpawner.Spawn<RedBloodCell>();
 
@@ -55,6 +60,7 @@ public partial class GameManager : Node3D
 		Enqueue(environment);
 		Enqueue(player);
 		Enqueue(whiteBloodCell);
+		//Enqueue(enemyParasite);
 		
 		BeginEntityTurn();
 	}
@@ -122,19 +128,19 @@ public partial class GameManager : Node3D
 			_turnResolutions++;
 			_turnCountLabel.Text = _turnResolutions.ToString();
 
-			_turnsUntilReRoll--;
+			TurnsUntilReRoll--;
 			
-			if (_turnsUntilReRoll <= 0)
+			if (TurnsUntilReRoll <= 0)
 			{
 				foreach (IGameEntity entity in _gameEntities)
 				{
 					entity.RoleRoshambo();
 				}
 
-				_turnsUntilReRoll = ReRollRate;
+				TurnsUntilReRoll = ReRollRate;
 			}
 
-			_turnsUntilReRollLabel.Text = _turnsUntilReRoll.ToString();
+			_turnsUntilReRollLabel.Text = TurnsUntilReRoll.ToString();
 		}
 		
 		_turnLabel.Text = string.Format(_turnLabelFormatter, _currentEntityTurn.EntityType);

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Godot;
 
 namespace Parasite;
@@ -30,6 +31,8 @@ public class BloodCellSpawner : IEntitySpawner<BloodCell>
 
 		bloodCell.GlobalPosition = position;
 		_gameManager.Tilemap.UpdateTileState(position, bloodCell);
+		
+		Debug.Assert(_gameManager.Tilemap.GetTileData(position).Occupant == bloodCell);
 
 		return bloodCell;
 	}

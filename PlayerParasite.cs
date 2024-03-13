@@ -55,9 +55,9 @@ public partial class PlayerParasite : ParasiteEntity
 	protected override ParasiteSegment CreateSegment(
 		Vector3 position,
 		bool deferMove = false,
-		Roshambo.Option option = Roshambo.Option.None)
+		int headIndex = 0)
 	{
-		ParasiteSegment segment = base.CreateSegment(position, deferMove, option);
+		ParasiteSegment segment = base.CreateSegment(position, deferMove, headIndex);
 		segment.Initialize(this);
 
 		return segment;

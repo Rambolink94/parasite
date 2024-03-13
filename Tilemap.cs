@@ -8,6 +8,8 @@ namespace Parasite;
 public partial class Tilemap : Node3D
 {
 	[Export] public int MapSize { get; set; } = 20;
+
+	public TileData[] Tiles => _tileData;
 	
 	private PackedScene _initialTile = GD.Load<PackedScene>("res://Tile.tscn");
 	

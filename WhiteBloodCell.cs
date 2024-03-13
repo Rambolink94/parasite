@@ -91,9 +91,14 @@ public partial class WhiteBloodCell : BloodCell, IGameEntity
 		{
 			_isWandering = false;
 
+			var allSegments = GameManager.Entities
+				.Where(x => x is ParasiteEntity)
+				.SelectMany(x => ((ParasiteEntity)x).Segments)
+				.ToList();
+
 			var minDistance = float.MaxValue;
-			ParasiteSegment minSegment = GameManager.Player.Segments[0];
-			foreach (ParasiteSegment segment in GameManager.Player.Segments)
+			ParasiteSegment minSegment = allSegments[0];
+			foreach (ParasiteSegment segment in allSegments)
 			{
 				var distance = GlobalPosition.DistanceTo(segment.GlobalPosition);
 				if (distance < minDistance)
