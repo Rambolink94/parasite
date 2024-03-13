@@ -6,8 +6,6 @@ namespace Parasite;
 
 public partial class PlayerParasite : ParasiteEntity
 {
-	public override EntityType EntityType => base.EntityType | EntityType.Player;
-
 	private List<Vector3> _availableDirections = new();
 	private bool _processedDirections;
 
@@ -38,9 +36,13 @@ public partial class PlayerParasite : ParasiteEntity
 		if (Input.IsActionJustPressed("parasite_back"))
 			input = Vector3.Back;
 
-		if (input.Length() > 0 && _availableDirections.Contains(input))
+		if (input.Length() > 0)
 		{
-			Move(input);
+			if (!Move(input, _availableDirections))
+			{
+				// Could not move toward input direction.
+				return;
+			}
 
 			_processedDirections = false;
 			EndTurn();
@@ -50,16 +52,5 @@ public partial class PlayerParasite : ParasiteEntity
 	public override void BeginTurn()
 	{
 		IsTurnActive = true;
-	}
-
-	protected override ParasiteSegment CreateSegment(
-		Vector3 position,
-		bool deferMove = false,
-		int headIndex = 0)
-	{
-		ParasiteSegment segment = base.CreateSegment(position, deferMove, headIndex);
-		segment.Initialize(this);
-
-		return segment;
 	}
 }

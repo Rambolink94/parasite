@@ -23,7 +23,11 @@ public partial class ParasiteSegment : MeshInstance3D, ITileOccupier, IRoshamboU
 		{
 			if (value)
 			{
-				Scale *= Vector3.One * 1.3f;
+				Scale *= 1.3f;
+			}
+			else
+			{
+				Scale /= 1.3f;
 			}
 			
 			_isHead = value;

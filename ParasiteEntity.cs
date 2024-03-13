@@ -7,13 +7,6 @@ namespace Parasite;
 
 public partial class ParasiteEntity : Node3D, IGameEntity
 {
-	private PackedScene _segmentResource = GD.Load<PackedScene>("res://ParasiteSegment.tscn");
-
-	private GameManager _gameManager;
-	private Color _color;
-	private Roshambo.Option _currentRoshamboOption;
-	private StandardMaterial3D _materialOverride;
-	
 	public Roshambo.Option CurrentRoshambo
 	{
 		get => _currentRoshamboOption;
@@ -30,9 +23,16 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 	public event TurnCompletedEventHandler TurnEnded;
 	public event Action RoshamboChanged;
 		
-	public List<ParasiteSegment> Segments { get; } = new();
+	public List<ParasiteSegment> Segments { get; private set; } = new();
 	
 	public virtual EntityType EntityType => EntityType.Parasite;
+	
+	private PackedScene _segmentResource = GD.Load<PackedScene>("res://ParasiteSegment.tscn");
+
+	private GameManager _gameManager;
+	private Color _color;
+	private Roshambo.Option _currentRoshamboOption;
+	private StandardMaterial3D _materialOverride;
 	
 	public void Initialize(GameManager gameManager, Color color, Vector3 position)
 	{
@@ -59,14 +59,14 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 
 		var directions = GetAvailableDirections();
 		
-		// TODO: Finish parasite movement
+		// TODO: Revisit this. It doesn't work right.
 		// Get all occupied tiles who, if segments, do not belong to this.
 		var occupiedTiles = _gameManager.Tilemap.Tiles
 			.Where(x => x.Occupant != null
 			            && !(x.Occupant is ParasiteSegment segment
 			                 && segment.Parent == this)).ToList();
 
-		var randomIndex = GD.Randi() % occupiedTiles.Count - 1;
+		var randomIndex = GD.Randi() % occupiedTiles.Count;
 		Tilemap.TileData bestTile = occupiedTiles[(int)randomIndex];
 		float bestDistance = float.MaxValue;
 		foreach (var head in Segments.Where(x => x.IsHead))
@@ -93,8 +93,7 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 		
 		// TODO: Get nearest parasite head
 		// - Move away from head if head will reach you before you can consume.
-
-		Vector3 bestDirection = directions[0];
+		Vector3 bestDirection = Vector3.Zero;
 		Vector3 direction = (bestTile.GlobalPosition - GlobalPosition).Normalized();
 		var dot = 0f;
 		foreach (Vector3 vec in directions)
@@ -107,7 +106,7 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 			}
 		}
 		
-		Move(bestDirection);
+		Move(bestDirection, directions);
 		
 		EndTurn();
 	}
@@ -131,14 +130,19 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 		Segments.Remove(segment);
 	}
 
-	protected void Move(Vector3 direction)
+	protected bool Move(Vector3 direction, List<Vector3> availableDirections)
 	{
+		bool moveSuccessful = false;
 		foreach (ParasiteSegment head in Segments.Where(x => x.IsHead).ToList())
 		{
 			int index = Segments.IndexOf(head);
 			Vector3 position = Segments[index].GlobalPosition + direction;
-			if (_gameManager.Tilemap.IsTileEnterable(position, EntityType.BloodCell | EntityType.Parasite, out ITileOccupier entity, CurrentRoshambo))
+			if (availableDirections.Contains(direction))
 			{
+				Tilemap.TileData tile = _gameManager.Tilemap.GetTileData(position);
+				if (tile == null) continue;
+				
+				ITileOccupier entity = tile.Occupant;
 				if (entity is BloodCell bloodCell)
 				{
 					CreateSegment(position, true, index);
@@ -149,16 +153,26 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 				{
 					if (segment.Parent == this)
 					{
-						// Attempt to move into self
-						return;
+						if (!IsSegmentValidTail(segment, head))
+						{
+							// Attempt to move into self at non-tail position.
+							continue;
+						}
+						
+						ReorganizeSegments(head, segment);
 					}
-					
-					segment.Cut();
+					else
+					{
+						segment.Cut();
+					}
 				}
 
 				UpdateSegments(direction, index);
+				moveSuccessful = true;
 			}
 		}
+
+		return moveSuccessful;
 	}
 	
 	protected List<Vector3> GetAvailableDirections()
@@ -169,12 +183,16 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 		{
 			foreach (Vector3 direction in GameManager.PossibleDirections)
 			{
-				if (_gameManager.Tilemap.IsTileEnterable(head.GlobalPosition + direction,
-					    EntityType.BloodCell | EntityType.Parasite,
-					    out ITileOccupier affectedEntity,
-					    CurrentRoshambo)
-				    && (affectedEntity == null
-				        || !affectedEntity.EntityType.HasFlag(EntityType.Player)))
+				// TODO: Cleanup this an IsEnterable. 
+				Tilemap.TileData tile = _gameManager.Tilemap.GetTileData(head.GlobalPosition + direction);
+				if (tile == null) continue;
+				if (tile.Occupant == null
+				    || tile.Occupant is RedBloodCell
+				    || (tile.Occupant is ParasiteSegment segment
+				        && segment.Parent == this
+				        && IsSegmentValidTail(segment))
+				    || tile.Occupant is IRoshamboUser user
+						&& Roshambo.Test(CurrentRoshambo, user.CurrentRoshambo))
 				{
 					availableDirection.Add(direction);
 				}
@@ -182,25 +200,6 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 		}
 
 		return availableDirection;
-	}
-	
-	private void UpdateSegments(Vector3 offset)
-	{
-		Vector3 previousPosition = Segments[0].GlobalPosition;
-		for (int i = 0; i < Segments.Count; i++)
-		{
-			ParasiteSegment current = Segments[i];
-			Vector3 toSet = previousPosition + (current.IsHead ? offset : Vector3.Zero);
-			previousPosition = current.GlobalPosition;
-			
-			bool setNull = i + 1 == Segments.Count || Segments[i + 1].IsHead;
-			
-			MoveSegment(current, toSet, !setNull);
-			if (i + 1 != Segments.Count && Segments[i + 1].IsHead)
-			{
-				previousPosition = Segments[i + 1].GlobalPosition;
-			}
-		}
 	}
 	
 	private void UpdateSegments(Vector3 offset, int startIndex)
@@ -223,7 +222,7 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 		}
 	}
 
-	protected virtual ParasiteSegment CreateSegment(
+	private ParasiteSegment CreateSegment(
 		Vector3 position,
 		bool deferMove = false,
 		int headIndex = 0)
@@ -237,16 +236,17 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 		{
 			throw new NullReferenceException("The segment did not have a material override");
 		}
-		
-		material.AlbedoColor = _color;
-		segment.MaterialOverride = material;
+
+		var newMat = new StandardMaterial3D();
+		segment.MaterialOverride = newMat;
 		
 		AddChild(segment);
+		segment.Initialize(this);
 		RoshamboChanged += segment.OnRoshamboChanged;
 
 		if (!deferMove)
 		{
-			MoveSegment(segment, position);
+			MoveSegment(segment, position, moveImmediately: true);
 		}
 		
 		var index = headIndex + 1;
@@ -268,14 +268,23 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 		return segment;
 	}
 
-	private void MoveSegment(ParasiteSegment segment, Vector3 position, bool ignoreNullSet = false)
+	private void MoveSegment(ParasiteSegment segment, Vector3 position, bool ignoreNullSet = false, bool moveImmediately = false)
 	{
 		if (!ignoreNullSet)
 		{
 			_gameManager.Tilemap.UpdateTileState(segment.GlobalPosition, null);
 		}
 
-		segment.GlobalPosition = position;
+		// TODO: Fix tweening
+		if (true)
+		{
+			segment.GlobalPosition = position;
+		}
+		else
+		{
+			CreateTween().TweenProperty(segment, "global_position", position, 0.1f);
+		}
+		
 		_gameManager.Tilemap.UpdateTileState(position, segment);
 	}
 	
@@ -291,5 +300,57 @@ public partial class ParasiteEntity : Node3D, IGameEntity
 		_materialOverride.AlbedoColor = color;
 
 		return _materialOverride;
+	}
+
+	private bool IsSegmentValidTail(ParasiteSegment segment, ParasiteSegment head = null)
+	{
+		if (head != null)
+		{
+			var i = Segments.IndexOf(head) + 1;
+			while (i < Segments.Count && !Segments[i].IsHead)
+			{
+				if (Segments[i] == segment)
+				{
+					// If here, the piece either isn't a tail, or is tail of the same parasite piece.
+					return false;
+				}
+
+				i++;
+			}
+		}
+		
+		var index = Segments.IndexOf(segment);
+		return index + 1 >= Segments.Count || Segments[index + 1].IsHead;
+	}
+
+	private void ReorganizeSegments(ParasiteSegment head, ParasiteSegment tail)
+	{
+		// TODO: This is shit. Clean it up if you have the time.
+		var combinedSegment = new List<ParasiteSegment> { head };
+		var headIndex = Segments.IndexOf(head);
+		var index = headIndex + 1;
+		while (index < Segments.Count && !Segments[index].IsHead)
+		{
+			combinedSegment.Add(Segments[index]);
+			index++;
+		}
+		
+		index = Segments.IndexOf(tail);
+		while (index >= 0)
+		{
+			combinedSegment.Insert(0, Segments[index]);
+			if (Segments[index].IsHead)
+			{
+				break;
+			}
+				
+			index--;
+			
+		}
+		
+		head.IsHead = false;
+
+		var diff = Segments.Except(combinedSegment);
+		Segments = diff.Concat(combinedSegment).ToList();
 	}
 }

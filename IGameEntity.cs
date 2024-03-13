@@ -23,10 +23,9 @@ public delegate void TurnCompletedEventHandler(IGameEntity entity, bool triggerG
 public enum EntityType
 {
     None = 0,
-    Player = 1 << 0,
-    WhiteBloodCell = 1 << 1,
-    RedBloodCell = 1 << 2,
+    WhiteBloodCell = 1 << 0,
+    RedBloodCell = 1 << 1,
     BloodCell = WhiteBloodCell | RedBloodCell,
-    Parasite = 1 << 3,
-    All = ~(-1 << 4),
+    Parasite = 1 << 2,
+    All = ~(-1 << 3),
 }

@@ -20,7 +20,7 @@ transform = Transform3D(1, 0, 0, 0, 0.690062, 0.723751, 0, -0.723751, 0.690062, 
 
 [node name="GameManager" type="Node3D" parent="."]
 script = ExtResource("2_qsp3h")
-WhiteBloodCellSpawnRate = 1000
+WhiteBloodCellSpawnRate = 20
 ReRollRate = 5
 
 [node name="BloodCellSpawner" type="Node3D" parent="GameManager"]

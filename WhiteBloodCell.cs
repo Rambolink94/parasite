@@ -144,7 +144,7 @@ public partial class WhiteBloodCell : BloodCell, IGameEntity
 		Tilemap.TileData data = GameManager.Tilemap.GetTileData(GlobalPosition + direction);
 		return data != null
 		       && data.IsEnterable(
-			       EntityType.Player | EntityType.Parasite,
+			       EntityType.Parasite,
 			       out entity,
 			       CurrentRoshambo);
 	}

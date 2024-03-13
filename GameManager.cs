@@ -59,8 +59,8 @@ public partial class GameManager : Node3D
 		
 		Enqueue(environment);
 		Enqueue(player);
-		Enqueue(whiteBloodCell);
 		//Enqueue(enemyParasite);
+		Enqueue(whiteBloodCell);
 		
 		BeginEntityTurn();
 	}
@@ -94,7 +94,7 @@ public partial class GameManager : Node3D
 			throw new InvalidOperationException("A turn was ended for an entity who turn it was not.");
 		}
 
-		if (entity is PlayerParasite && _turnResolutions % WhiteBloodCellSpawnRate == 0)
+		if (entity is EnvironmentEntity && _turnResolutions % WhiteBloodCellSpawnRate == 0)
 		{
 			var bloodCell = _bloodCellSpawner.Spawn<WhiteBloodCell>();
 			Enqueue(bloodCell);
